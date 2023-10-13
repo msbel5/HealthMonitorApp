@@ -1,0 +1,396 @@
+@model List<HealthMonitorApp.ViewModels.ServiceStatusIndexViewModel>
+
+@{
+    ViewBag.Title = "SOS Service Health Status";
+    Layout = "_Layout";
+}
+
+<div class="title-container">
+    <label style="visibility: hidden" class="switch">
+        <input type="checkbox" id="viewToggle">
+        <span class="slider round"></span>
+    </label>
+</div>
+
+<div>
+    <h6 style="font-size: medium; margin-bottom: -2rem" class="centered-title">Last Check Time</h6>
+</div>
+<div class="buttons-container mb-3">
+    <a href="@Url.Action("CheckAllServicesHealth", "HealthMonitor")" class="btn btn-primary align-left" style="top: 50%">Check All Endpoints</a>
+    <div class="invisible-button">
+            <p class="centered-title" id="lastRefreshTime">
+                    @{
+                        var lastCheck = Model.LastOrDefault()?.LastCheck;
+                        if (lastCheck.HasValue)
+                        {
+                            @lastCheck.Value.ToString("HH:mm:ss")
+                        }
+                        else
+                        {
+                            <text>Not Available</text>
+                        }
+                    }
+            </p>
+    </div>
+    <a href="@Url.Action("Create", "HealthMonitor")" class="btn btn-primary align-right align-middle" >Create New Service Status</a>
+</div>
+
+<!-- Circle View -->
+<div class="services-container-circle" style="display: none;">
+    @foreach (var service in Model)
+    {
+        if (service != null) // Check if service is not null
+        {
+            <div class="service-circle-item">
+                <div class="circle @(service.IsHealthy ? (service.CurrentResponseTime > 55 ? "yellow" : "green") : "red")">
+                    @if (!service.IsHealthy)
+                    {
+                        <i class="fas fa-exclamation"></i>
+                    }
+                    else
+                    {
+                        <span>@service.CurrentResponseTime s</span>
+                    }
+                </div>
+                <div class="circle-service-name">@service.Name</div>
+                <div class="circle-service-actions">
+                    <a asp-action="Edit" asp-route-id="@service.ID"><i class="fas fa-edit"></i></a>
+                    <a asp-action="Details" asp-route-id="@service.ID"><i class="fas fa-info-circle"></i></a>
+                    <a href="#" data-id="@service.ID" class="delete-link"><i class="fas fa-trash-alt"></i></a>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Line View -->
+<div class="services-container-line">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th class="text-center">API Group</th>
+                <th class="text-center">Service Name</th>
+                <th class="text-center">Response Status</th>
+                <th class="text-center">Last Response Time (s)</th>
+                <th class="text-center">2nd Last Response Time (s)</th>
+                <th class="text-center">3rd Last Response Time (s)</th>
+                <th class="text-center">Average Response Time (s)</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var service in Model)
+            {
+                var responseClass = "";
+                if (!service.IsHealthy)
+                {
+                    responseClass = "response-red";
+                }
+                else if (service.CurrentResponseTime > service.AverageResponseTime)
+                {
+                    responseClass = "response-yellow";
+                }
+                else
+                {
+                    responseClass = "response-green";
+                }
+                <tr>
+                    <td class="text-left">@service.ApiGroupName</td>
+                    <td class="text-left">@service.Name</td>
+                    <td class="response-time @responseClass text-center">
+                        @if (!service.IsHealthy)
+                        {
+                            <i class="fas fa-exclamation-circle icon-large"></i>
+                        }else if (service.CurrentResponseTime > service.AverageResponseTime)
+                        {
+                            <i class="fas fa-tachometer-alt-fast fa-flip-horizontal icon-large"></i>
+                        }else
+                        {
+                            <i class="fas fa-check-circle icon-large"></i>
+                        }
+                    </td>
+                    @{
+                        int responseTimesCount = service.LastThreeResponseTimes.Count;
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (i < responseTimesCount)
+                            {
+                                if (@service.LastThreeResponseTimes[i] > 0)
+                                {
+                                    <td class="text-center"><span>@service.LastThreeResponseTimes[i]</span></td>
+                                } else
+                                {
+                                    <td class="text-center"><i class="fas fa-ban"></i></td>
+                                }
+                            }
+                            else
+                            {
+                                <td class="text-center"><i class="fas fa-ban"></i></td>
+                            }
+                        }
+                    }
+
+                    @if (service.AverageResponseTime > 0)
+                    {
+                        <td class="text-center">@service.AverageResponseTime.ToString("0.000")</td>
+                    }
+                    else
+                    {
+                        <td class="text-center"><i class="fas fa-ban"></i></td>
+                    }
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@service.ID"><i class="fas fa-info-circle"></i></a>
+                        <a asp-action="Edit" asp-route-id="@service.ID"><i class="fas fa-edit"></i></a>
+                        <a href="#" data-id="@service.ID" class="delete-link"><i class="fas fa-trash-alt"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <!-- Content will be loaded here from the partial view -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Add the styles for the new design -->
+<style>
+.title-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    padding-top: 20px;
+}
+
+.invisible-button {
+    flex: 1;
+}
+
+.align-left, .align-right, .align-center {
+    flex: 1;
+    text-align: center;
+}
+
+.centered-title {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.5rem;
+}
+
+.services-container-circle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.service-circle-item {
+    flex: 0 0 calc(10% - 20px);
+    max-width: calc(10% - 20px);
+    margin: 10px; /* Explicitly set the margin */
+    text-align: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 150px; /* Adjust based on your needs */
+}
+
+.circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.circle-service-name {
+    margin-top: 10px;
+}
+
+.circle-service-actions {
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+}
+
+.circle-service-actions a {
+    margin: 0 5px;
+    color: inherit;
+    transition: color 0.3s;
+}
+
+.circle-service-actions a:hover {
+    color: #007bff;
+}
+
+.green {
+    background-color: green;
+    align-self: auto;
+}
+
+.yellow {
+    background-color: yellow;
+    align-self: auto;
+}
+
+.red {
+    background-color: red;
+    align-self: auto;
+}
+
+.service-name {
+    margin-top: 10px;
+}
+
+.service-actions {
+    margin-top: 5px;
+}
+
+.service-actions a {
+    margin: 0 5px;
+    color: inherit;
+    transition: color 0.3s;
+}
+
+.service-actions a:hover {
+    color: #007bff;
+}
+
+td.response-time {
+    font-weight: bold;
+}
+
+.response-green {
+    color: green;
+}
+
+.response-yellow {
+    color: gold;
+}
+
+.response-red {
+    color: red;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 15px;
+    margin: 5px auto;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 15px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 13px;
+    width: 13px;
+    left: 1px;
+    bottom: 1px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(16px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.icon-large {
+    font-size: 1.5em; /* Adjust this value to make the icon larger or smaller */
+}
+
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const toggleSwitch = document.getElementById('viewToggle');
+    const circleView = document.querySelector('.services-container-circle');
+    const lineView = document.querySelector('.services-container-line');
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/notificationHub")
+        .build();
+
+    connection.on("RefreshPage", function() {
+            location.reload();
+        });
+
+    connection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    // Set the initial view to line view
+    circleView.style.display = 'none'; // This remains the same
+    lineView.style.display = 'block';  // This remains the same
+
+    toggleSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            circleView.style.display = 'flex'; // Change this to 'flex'
+            lineView.style.display = 'none';
+        } else {
+            circleView.style.display = 'none';
+            lineView.style.display = 'block';
+        }
+    });
+
+    $(document).ready(function() {
+        $(".delete-link").click(function() {
+            var id = $(this).data("id");
+            $.get("/HealthMonitor/Delete/" + id, function(data) {
+                $("#deleteModal .modal-content").html(data);
+                $("#deleteModal").modal("show");
+            });
+        });
+    });
+});
+</script>

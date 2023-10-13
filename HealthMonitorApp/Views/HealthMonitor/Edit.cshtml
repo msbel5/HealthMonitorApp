@@ -1,0 +1,89 @@
+@model HealthMonitorApp.ViewModels.ServiceStatusEditViewModel
+
+@{
+    ViewBag.Title = "Edit Service Status";
+    Layout = "_Layout";
+}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Service Status</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        .container {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2 class="text-center">Edit Service Status</h2>
+    <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
+        @Html.HiddenFor(model => model.ID)
+
+        <!-- Service Status Name -->
+        <div class="form-group">
+            <label asp-for="Name">Service Status Name</label>
+            <input asp-for="Name" class="form-control" required />
+        </div>
+
+        <!-- Expected Status Code -->
+        <div class="form-group">
+            <label asp-for="ExpectedStatusCode">Expected Status Code</label>
+            <input asp-for="ExpectedStatusCode" class="form-control" required />
+        </div>
+
+        <!-- CURL Command -->
+        <div class="form-group">
+            <label asp-for="CURL">CURL Command</label>
+            <textarea asp-for="CURL" class="form-control" rows="4" required></textarea>
+        </div>
+
+        <!-- Existing API Groups -->
+        <div class="form-group">
+            <label asp-for="ApiGroupID">API Groups</label>
+            <select asp-for="ApiGroupID" class="form-control">
+                <option value="0">Add New API Group</option>
+                @foreach (var group in Model.ApiGroups)
+                {
+                    <option value="@group.ID">@group.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- New API Group Name -->
+        <div class="form-group" id="newApiGroupDiv" style="display:none;">
+            <label asp-for="NewApiGroupName">New API Group Name</label>
+            <input asp-for="NewApiGroupName" class="form-control" />
+        </div>
+
+        <!-- Update Button -->
+        <div class="form-group text-center">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+    </form>
+
+    <div>
+        <a asp-action="Index">Back to List</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+           $('#ApiGroupID').change(function () {
+                if ($(this).val() === '0') {
+                    $('#newApiGroupDiv').show();
+                } else {
+                    $('#newApiGroupDiv').hide();
+                }
+            });
+        });
+    </script>
+
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+</body>

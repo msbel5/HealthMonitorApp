@@ -1,0 +1,14 @@
+
+|csharpsquid:S3776À"RRefactor this method to reduce its Cognitive Complexity from 28 to the 15 allowed.(´À§ˆüÿÿÿÿ8Ø¦¥¯1
+Pcsharpsquid:S1144",Remove the unused private field 'baseUrlIK'.(¼ÛÅ£8¦Ø¦¥¯1
+Ucsharpsquid:S1144",Remove the unused private field 'storeCode'.(ˆ×ÕÍşÿÿÿÿ8¦Ø¦¥¯1
+Pcsharpsquid:S1144"'Remove the unused private field 'guid'.(Ÿßİûÿÿÿÿ8§Ø¦¥¯1
+Lcsharpsquid:S1144"(Remove the unused private field 'value'.(ÉæŒş8¨Ø¦¥¯1
+Zcsharpsquid:S1144"1Remove the unused private field 'departmentCode'.(ã¡èüÿÿÿÿ8¨Ø¦¥¯1
+^csharpsquid:S1144"5Remove the unused private field 'registrationNumber'.(®¤œ¢ùÿÿÿÿ8¹Ø¦¥¯1
+Vcsharpsquid:S1144"-Remove the unused private field 'regionCode'.(ÑÑñúÿÿÿÿ8¹Ø¦¥¯1
+Mcsharpsquid:S1144")Remove the unused private field 'relKey'.(§ëÅ8¹Ø¦¥¯1
+Scsharpsquid:S1144"/Remove the unused private field 'answerStatus'.(•Æ¹8¹Ø¦¥¯1
+icsharpsquid:S1144-"@Remove the unused private method 'InitializeDataFromKarateFile'.(œ¦ïæûÿÿÿÿ8¹Ø¦¥¯1
+hcsharpsquid:S1075"?Refactor your code not to use hardcoded absolute paths or URIs.(“úÉèüÿÿÿÿ8ºØ¦¥¯1
+ccsharpsquid:S1075"?Refactor your code not to use hardcoded absolute paths or URIs.(¼ÛÅ£8ºØ¦¥¯1

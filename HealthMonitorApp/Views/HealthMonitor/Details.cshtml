@@ -1,0 +1,50 @@
+@model HealthMonitorApp.Models.ServiceStatus
+
+@{
+    ViewBag.Title = "Service Status Details";
+    Layout = "_Layout";
+}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status Details</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        #responseTreeView li.selected {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body>
+
+<<div class="container mt-5">
+     <h2 class="text-center">Service Status Details</h2>
+
+     <dl class="row">
+         <dt class="col-sm-4">Service Status Name</dt>
+         <dd class="col-sm-8">@Model.Name</dd>
+
+         <dt class="col-sm-4">Expected Status Code</dt>
+         <dd class="col-sm-8">@Model.ApiEndpoint.ExpectedStatusCode</dd>
+
+         <dt class="col-sm-4">API Group</dt>
+         <dd class="col-sm-8">@Model.ApiEndpoint.ApiGroup.Name</dd>
+         <dt class="col-sm-4">CURL Command</dt>
+         <dd class="col-sm-8">@Model.ApiEndpoint.cURL</dd>
+         @if (Model.ResponseContent != null){
+         <dt class="col-sm-4">Response Content</dt>
+         <dd class="col-sm-8">@Model.ResponseContent</dd>}
+     </dl>
+ </div>
+<div class="text-center">
+    <a asp-action="Edit" asp-route-id="@Model.ID">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
+</body>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

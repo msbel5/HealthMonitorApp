@@ -1,0 +1,127 @@
+    @model HealthMonitorApp.ViewModels.ServiceStatusCreateViewModel
+
+    @{
+        ViewBag.Title = "Create Service Status";
+        Layout = "_Layout";
+    }
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Create Service Status</title>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <style>
+            .container {
+                max-width: 600px;
+            }
+        </style>
+    </head>
+    <body>
+
+    <div class="container mt-5">
+        <h2 class="text-center">Create Service Status</h2>
+        <form asp-action="Create" asp-controller="HealthMonitor" method="post">
+            <!-- Service Status Name -->
+            <div class="form-group">
+                <label for="Name">Service Status Name</label>
+                <input type="text" class="form-control" id="Name" name="ServiceName" required>
+            </div>
+            <!-- Expected Status Code -->
+            <div class="form-group">
+                <label for="ExpectedStatusCode">Expected Status Code</label>
+                <input type="number" class="form-control" id="ExpectedStatusCode" name="ExpectedStatusCode" required>
+            </div>
+            <!-- CURL Command -->
+            <div class="form-group">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label for="CurlCommand" class="mb-0">CURL Command</label>
+                    <div>
+                        <button type="button" id="remove-curl-command" class="btn btn-link p-0" style="display: none;"><i class="fa fa-minus"></i></button>  <!-- Added inline style to hide the button initially -->
+                        <button type="button" id="add-curl-command" class="btn btn-link p-0"><i class="fa fa-plus"></i></button>
+                        <button type="button" id="helpIcon" class="btn btn-link p-0"><i class="fa fa-question-circle"></i></button>
+                    </div>
+                </div>
+                <div id="curl-commands-container">
+                    <textarea class="form-control curl-command" rows="4" name="cURL"></textarea>
+                </div>
+            </div>
+            <!-- Existing API Groups -->
+            <div class="form-group">
+                <label for="ExistingApiGroups">API Groups</label>
+                <select class="form-control" id="ExistingApiGroups" name="ApiGroupID">
+                    <option value="auto" selected>Auto Group</option>
+                    <option value="addNew">Add New API Group</option>
+                    @foreach(var group in Model.ApiGroups)
+                    {
+                        <option value="@group.ID">@group.Name</option>
+                    }
+                </select>
+            </div>
+            <!-- New API Group Name -->
+            <div class="form-group" id="newApiGroupDiv" style="display:none;">
+                <label for="NewApiGroupName">New API Group Name</label>
+                <input type="text" class="form-control" id="NewApiGroupName" name="NewApiGroupName">
+            </div>
+             <!-- Create Button -->
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+        </form>
+        <div id="errorDiv" style="color: red; display:none;">
+            <strong>Error:</strong> <span id="errorMsg"></span>
+        </div>
+    </div>
+
+    <div>
+        <a asp-action="Index">Back to List</a>
+    </div>
+    </body>
+
+    @section Scripts {
+        <script>
+            $(document).ready(function () {
+                $('#ExistingApiGroups').change(function () {
+                    if ($(this).val() === 'addNew') {
+                        $('#newApiGroupDiv').show();
+                    } else {
+                        $('#newApiGroupDiv').hide();
+                    }
+                });
+
+
+                $('#add-curl-command').click(function () {
+                    var newTextArea = '<textarea class="form-control curl-command mt-2" rows="4" name="cURL"></textarea>';
+                    $('#curl-commands-container').append(newTextArea);
+                    $('#remove-curl-command').show();  // Show the minus button when more than one textarea is present
+                });
+
+                $('#remove-curl-command').click(function () {
+                    if ($('.curl-command').length > 1) {
+                        $('.curl-command:last').remove();
+                        if ($('.curl-command').length === 1) {  // Check if only one textarea is left
+                            $('#remove-curl-command').hide();  // Hide the minus button if only one textarea is present
+                        }
+                    }
+                });
+
+               $('#helpIcon').click(function () {
+                    var message = 'You can add dynamic strings using the following format: \n';
+                    message += '${{JS_CODE}}';
+                    alert(message);
+                });
+
+                $('form').submit(function (e) {
+                    var commands = [];
+                    $('.curl-command').each(function () {
+                        commands.push($(this).val());
+                    });
+                    $('.curl-command:first').val(commands.join('&&&'));
+                });
+            });
+        </script>
+
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    }
+
