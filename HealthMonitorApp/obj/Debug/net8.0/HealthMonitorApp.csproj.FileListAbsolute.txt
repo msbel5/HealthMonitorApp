@@ -72,3 +72,4 @@
 /Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/bin/Debug/net8.0/package-lock.json
 /Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/bin/Debug/net8.0/package.json
 /Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/bin/Debug/net8.0/Jint.dll
+/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Debug/net8.0/HealthMonitorApp.sourcelink.json
