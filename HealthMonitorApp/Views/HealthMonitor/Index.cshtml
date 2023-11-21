@@ -100,13 +100,13 @@
                     <td class="response-time @responseClass text-center">
                         @if (!service.IsHealthy)
                         {
-                            <i class="fas fa-exclamation-circle icon-large"></i>
+                            <i class="fas fa-exclamation-circle icon-large icon-red"></i>
                         }else if (service.CurrentResponseTime > service.AverageResponseTime)
                         {
-                            <i class="fas fa-tachometer-alt-fast fa-flip-horizontal icon-large"></i>
+                            <i class="fas fa-tachometer-alt-fast fa-flip-horizontal icon-large icon-gold"></i>
                         }else
                         {
-                            <i class="fas fa-check-circle icon-large"></i>
+                            <i class="fas fa-check-circle icon-large icon-green"></i>
                         }
                     </td>
                     @{
@@ -160,6 +160,9 @@
 
 <!-- Add the styles for the new design -->
 <style>
+.icon-green { color: green; }
+.icon-gold { color: gold; }
+.icon-red { color: red; }
 .title-container {
     text-align: center;
     margin-bottom: 20px;

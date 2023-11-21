@@ -75,6 +75,9 @@ namespace HealthMonitorApp.Migrations
                     b.Property<int>("ApiEndpointID")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AssertionScript")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CheckedAt")
                         .HasColumnType("TEXT");
 

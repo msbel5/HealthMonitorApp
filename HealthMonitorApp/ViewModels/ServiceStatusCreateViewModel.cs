@@ -15,7 +15,8 @@ namespace HealthMonitorApp.ViewModels
 
         [Required]
         public string cURL { get; set; }
-
+        
+        public string? AssertionScript { get; set; }
         public string? ApiGroupId { get; set; }
         public string? NewApiGroupName { get; set; }
 

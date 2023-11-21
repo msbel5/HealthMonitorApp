@@ -1,3 +1,4 @@
+@using System.Web
 @model HealthMonitorApp.ViewModels.ServiceStatusEditViewModel
 
 @{
@@ -9,81 +10,188 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Service Status</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
         .container {
             max-width: 600px;
         }
+        #editor {
+            height: 300px; /* Adjust height as needed */
+        }
+        .code-display {
+            position: relative; /* Add relative positioning */
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0; /* Remove padding to allow the editor to fill the space */
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; /* Add this to prevent overflow */
+        }
     </style>
 </head>
+
 <body>
+    <div class="container mt-5">
+        <h2 class="text-center">Edit Service Status</h2>
+        <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
+            @Html.HiddenFor(model => model.ID)
 
-<div class="container mt-5">
-    <h2 class="text-center">Edit Service Status</h2>
-    <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
-        @Html.HiddenFor(model => model.ID)
+            <!-- Service Status Name -->
+            <div class="form-group">
+                <label asp-for="Name">Service Status Name</label>
+                <input asp-for="Name" class="form-control" required />
+            </div>
 
-        <!-- Service Status Name -->
-        <div class="form-group">
-            <label asp-for="Name">Service Status Name</label>
-            <input asp-for="Name" class="form-control" required />
+            <!-- Expected Status Code -->
+            <div class="form-group">
+                <label asp-for="ExpectedStatusCode">Expected Status Code</label>
+                <input asp-for="ExpectedStatusCode" class="form-control" required />
+            </div>
+
+            <!-- CURL Command -->
+            <div class="form-group">
+                <div class="d-flex justify-content-between align-items-center">
+                    <label for="CurlCommandEdit" class="mb-0">CURL Command</label>
+                    <div>
+                        <button type="button" id="remove-curl-command-edit" class="btn btn-link p-0" style="display: none;"><i class="fa fa-minus"></i></button>
+                        <button type="button" id="add-curl-command-edit" class="btn btn-link p-0"><i class="fa fa-plus"></i></button>
+                        <button type="button" id="helpIcon" class="btn btn-link p-0"><i class="fa fa-question-circle"></i></button>
+                    </div>
+                </div>
+                <div id="curl-commands-edit-container">
+                    <!-- Textareas will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Existing API Groups -->
+            <div class="form-group">
+                <label asp-for="ApiGroupID">API Groups</label>
+                <select asp-for="ApiGroupID" class="form-control">
+                    <option value="0">Add New API Group</option>
+                    @foreach (var group in Model.ApiGroups)
+                    {
+                        <option value="@group.ID">@group.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- New API Group Name -->
+            <div class="form-group" id="newApiGroupDiv" style="display:none;">
+                <label asp-for="NewApiGroupName">New API Group Name</label>
+                <input asp-for="NewApiGroupName" class="form-control" />
+            </div>
+
+            <!-- Custom Assertion -->
+            <div class="form-group">
+                <label asp-for="AssertionScript">Assertion Script (Optional)</label>
+                <div class="code-display" id="editor"></div> <!-- Monaco Editor will be initialized here -->
+            </div>
+
+            <!-- Update Button -->
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+
+        <div>
+            <a asp-action="Index">Back to List</a>
         </div>
-
-        <!-- Expected Status Code -->
-        <div class="form-group">
-            <label asp-for="ExpectedStatusCode">Expected Status Code</label>
-            <input asp-for="ExpectedStatusCode" class="form-control" required />
-        </div>
-
-        <!-- CURL Command -->
-        <div class="form-group">
-            <label asp-for="CURL">CURL Command</label>
-            <textarea asp-for="CURL" class="form-control" rows="4" required></textarea>
-        </div>
-
-        <!-- Existing API Groups -->
-        <div class="form-group">
-            <label asp-for="ApiGroupID">API Groups</label>
-            <select asp-for="ApiGroupID" class="form-control">
-                <option value="0">Add New API Group</option>
-                @foreach (var group in Model.ApiGroups)
-                {
-                    <option value="@group.ID">@group.Name</option>
-                }
-            </select>
-        </div>
-
-        <!-- New API Group Name -->
-        <div class="form-group" id="newApiGroupDiv" style="display:none;">
-            <label asp-for="NewApiGroupName">New API Group Name</label>
-            <input asp-for="NewApiGroupName" class="form-control" />
-        </div>
-
-        <!-- Update Button -->
-        <div class="form-group text-center">
-            <button type="submit" class="btn btn-primary">Update</button>
-        </div>
-    </form>
-
-    <div>
-        <a asp-action="Index">Back to List</a>
     </div>
-</div>
+</body>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
     <script>
         $(document).ready(function () {
-           $('#ApiGroupID').change(function () {
+            function addCurlCommandEdit(command = '') {
+                var newTextArea = '<div class="curl-command-edit-container"><textarea class="form-control curl-command-edit mt-2" rows="4">' + command + '</textarea></div>';
+                $('#curl-commands-edit-container').append(newTextArea);
+                $('#remove-curl-command-edit').show();
+            }
+
+            var encodedCurlCommands = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.CURL))';
+            var curlCommands = encodedCurlCommands.includes('&&&') ? encodedCurlCommands.split('&&&') : [encodedCurlCommands];
+
+            if (curlCommands.length === 0 || (curlCommands.length === 1 && curlCommands[0] === '')) {
+                addCurlCommandEdit();
+            } else {
+                curlCommands.forEach(function (command) {
+                    addCurlCommandEdit(command);
+                });
+            }
+
+            $('#add-curl-command-edit').click(function() { addCurlCommandEdit(); });
+            $('#remove-curl-command-edit').click(function() {
+                if ($('.curl-command-edit').length > 1) {
+                    $('.curl-command-edit-container:last').remove();
+                    if ($('.curl-command-edit').length === 1) {
+                        $('#remove-curl-command-edit').hide();
+                    }
+                }
+            });
+
+            $('form').submit(function (e) {
+                var combinedCommands = $('.curl-command-edit').map(function() {
+                    return $(this).val();
+                }).get().join('&&&');
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'combinedCurl',
+                    name: 'CURL',
+                    value: combinedCommands
+                }).appendTo('form');
+            });
+
+            $('#ApiGroupID').change(function () {
                 if ($(this).val() === '0') {
                     $('#newApiGroupDiv').show();
                 } else {
                     $('#newApiGroupDiv').hide();
                 }
             });
+
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+            require(['vs/editor/editor.main'], function () {
+                var editor = monaco.editor.create(document.getElementById('editor'), {
+                    language: 'csharp',
+                    theme: 'vs-dark',
+                    value: `@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.AssertionScript))`,
+                    minimap: { enabled: false }, // Disable or adjust minimap settings
+                    automaticLayout: true /* This ensures the editor size adjusts to the container */
+                });
+
+                // Function to manage read-only lines
+                function updateReadOnlyLines() {
+                    var model = editor.getModel();
+                    var lineCount = model.getLineCount();
+                    var firstLineLength = model.getLineMaxColumn(1);
+                    var lastLineLength = model.getLineMaxColumn(lineCount);
+
+                    var readOnlyRanges = [
+                        new monaco.Range(1, 1, 1, firstLineLength), // Entire first line
+                        new monaco.Range(lineCount, 1, lineCount, lastLineLength) // Entire last line
+                    ];
+
+                    return editor.deltaDecorations([], readOnlyRanges.map(range => ({
+                        range: range, options: { isWholeLine: true, linesDecorationsClassName: 'readOnlyDecoration' }
+                    })));
+                }
+
+                var decorations = updateReadOnlyLines();
+                editor.onDidChangeModelContent(function (e) {
+                    // Update read-only decorations
+                    decorations = updateReadOnlyLines();
+                });
+
+                $('form').submit(function (e) {
+                    var code = editor.getValue();
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'AssertionScript',
+                        value: code
+                    }).appendTo('form');
+                });
+            });
         });
     </script>
-
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
-</body>

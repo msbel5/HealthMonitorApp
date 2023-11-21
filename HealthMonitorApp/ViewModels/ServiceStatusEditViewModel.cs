@@ -8,6 +8,7 @@ public class ServiceStatusEditViewModel
     public string Name { get; set; }
     public int ExpectedStatusCode { get; set; }
     public string CURL { get; set; }
+    public string? AssertionScript { get; set; }
     public int? ApiGroupID { get; set; }
     public string? NewApiGroupName { get; set; }
     public List<ApiGroup>? ApiGroups { get; set; }

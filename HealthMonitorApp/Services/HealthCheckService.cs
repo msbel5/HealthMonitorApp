@@ -5,10 +5,17 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CSScriptLib;
 using HealthMonitorApp.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.parser;
+using System.IO;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace HealthMonitorApp.Services
 {
@@ -17,7 +24,6 @@ namespace HealthMonitorApp.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<HealthCheckService> _logger;
         private const string CurlDelimiter = "&&&";  // Delimiter for separating multiple cURL commands
-
 
         public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger)
         {
@@ -43,6 +49,7 @@ namespace HealthMonitorApp.Services
 
             var isHealthy = true;
             var responseContentBuilder = new StringBuilder();
+            var responseMessages = new List<HttpResponseMessage>();
 
             try
             {
@@ -63,7 +70,7 @@ namespace HealthMonitorApp.Services
                         _logger.LogInformation("Detected literal URL. Handling literal URL.");
                         response = await HandleLiteralUrlAsync(modifiedEndpoint);
                     }
-
+                    responseMessages.Add(response);
                     var responseString =  await response.Content.ReadAsStringAsync();  // Separated this line
                     responseString = response.StatusCode + " - " + responseString;
                     responseContentBuilder.AppendLine(responseString);  // and this line
@@ -80,6 +87,13 @@ namespace HealthMonitorApp.Services
                 responseContentBuilder.AppendLine(ex.Message);
             }
 
+            if (isHealthy && !string.IsNullOrEmpty(serviceStatus.AssertionScript))
+            {
+                foreach (var responseMessage in responseMessages)
+                {
+                    isHealthy &= await ExecuteCustomAssertion(responseMessage, serviceStatus.AssertionScript);
+                }
+            }
 
             serviceStatus.IsHealthy = isHealthy;
             serviceStatus.ResponseContent = responseContentBuilder.ToString();
@@ -97,6 +111,22 @@ namespace HealthMonitorApp.Services
 
             _context.ServiceStatusHistories.Add(history);
             await _context.SaveChangesAsync();
+        }
+
+        private async Task<bool> ExecuteCustomAssertion(HttpResponseMessage response, string script)
+        {
+            try
+            {
+                var assertMethod = CSScript.Evaluator
+                    .CreateDelegate($"bool AssertResponse(System.Net.Http.HttpResponseMessage responseMessage) {{ {script} }}");
+
+                return (bool)assertMethod(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Assertion script execution failed: {ex.Message}");
+                return false;  // Depending on your policy, you might want to handle this differently
+            }
         }
 
         private bool IsCurlCommand(string command)
@@ -215,3 +245,4 @@ namespace HealthMonitorApp.Services
 
     }
 }
+

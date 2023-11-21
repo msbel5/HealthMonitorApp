@@ -137,6 +137,10 @@ public class HealthMonitorController : Controller
                         Name = model.ServiceName,
                     };
 
+                    if (!string.IsNullOrWhiteSpace(model.AssertionScript))                    {
+                        serviceStatus.AssertionScript = model.AssertionScript;
+                    }
+
                     _context.ServiceStatuses.Add(serviceStatus);
                     await _context.SaveChangesAsync();
 
@@ -237,7 +241,8 @@ public class HealthMonitorController : Controller
             ExpectedStatusCode = serviceStatus.ApiEndpoint.ExpectedStatusCode,
             CURL = serviceStatus.ApiEndpoint.cURL,
             ApiGroupID = serviceStatus.ApiEndpoint.ApiGroupID,
-            ApiGroups = _context.ApiGroups.ToList()
+            ApiGroups = _context.ApiGroups.ToList(),
+            AssertionScript = serviceStatus.AssertionScript
         };
 
         return View(viewModel);
@@ -247,7 +252,7 @@ public class HealthMonitorController : Controller
     // POST: HealthMonitor/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("ID,Name,ExpectedStatusCode,CURL,ApiGroupID,NewApiGroupName,ApiGroups")] ServiceStatusEditViewModel viewModel)
+    public async Task<IActionResult> Edit(int id, [Bind("ID,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupID,NewApiGroupName,ApiGroups")] ServiceStatusEditViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
@@ -281,6 +286,7 @@ public class HealthMonitorController : Controller
                 serviceStatus.ApiEndpoint.ExpectedStatusCode = viewModel.ExpectedStatusCode;
                 serviceStatus.ApiEndpoint.cURL = viewModel.CURL;
                 serviceStatus.ApiEndpoint.ApiGroupID = viewModel.ApiGroupID;
+                serviceStatus.AssertionScript = viewModel.AssertionScript;
 
                 _context.Update(serviceStatus);
                 await _context.SaveChangesAsync();
@@ -381,8 +387,5 @@ public class HealthMonitorController : Controller
 
         return RedirectToAction(nameof(Index));
     }
-
-
-
 
 }

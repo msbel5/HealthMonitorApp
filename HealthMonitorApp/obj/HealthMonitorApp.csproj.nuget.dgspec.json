@@ -1,26 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj": {}
+    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {}
   },
   "projects": {
-    "/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj": {
+    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj",
+        "projectUniqueName": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
         "projectName": "HealthMonitorApp",
-        "projectPath": "/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj",
-        "packagesPath": "/Users/testinium/.nuget/packages/",
-        "outputPath": "/Users/testinium/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/",
+        "projectPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
+        "packagesPath": "/Users/macgyver/.nuget/packages/",
+        "outputPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/testinium/.nuget/NuGet/NuGet.Config"
+          "/Users/macgyver/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "/usr/local/share/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,6 +38,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "CS-Script": {
+              "target": "Package",
+              "version": "[4.8.8, )"
+            },
             "Jint": {
               "target": "Package",
               "version": "[2.11.58, )"
@@ -60,6 +63,10 @@
             "SendGrid": {
               "target": "Package",
               "version": "[9.28.1, )"
+            },
+            "iTextSharp": {
+              "target": "Package",
+              "version": "[5.5.13.3, )"
             }
           },
           "imports": [
@@ -81,7 +88,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.100-rc.1.23463.5/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

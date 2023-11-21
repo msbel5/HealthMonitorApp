@@ -8,6 +8,7 @@ public class ServiceStatus
     public DateTime CheckedAt { get; set; }
     public double ResponseTime { get; set; }
     public string? ResponseContent { get; set; }
+    public string? AssertionScript { get; set; }
 
     // Navigation properties
     public int ApiEndpointID { get; set; }
