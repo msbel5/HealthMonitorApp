@@ -1,6 +1,8 @@
+using System.Net;
 using HealthMonitorApp.Models;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Tesseract;
 
 namespace HealthMonitorApp.Services;
 
@@ -20,11 +22,11 @@ public class AssertionService
     {
         try
         {
+            userScript = WebUtility.HtmlDecode(userScript);;
+            
             _logger.LogInformation("User Script: \n" + userScript);
 
-            var scriptOptions = ScriptOptions.Default
-                .AddReferences(typeof(HttpResponseMessage).Assembly)
-                .AddImports("System.Net.Http");
+            var scriptOptions = GetScriptOptions();
 
             var globals = new Globals { response = response };
 
@@ -44,6 +46,39 @@ public class AssertionService
             _logger.LogInformation("Script execution error: " + e.Message);
             return false;
         }
+    }
+    
+    public ScriptOptions GetScriptOptions()
+    {
+        var scriptOptions = ScriptOptions.Default
+            .AddReferences(
+                // References to the assemblies
+                typeof(HttpResponseMessage).Assembly,
+                typeof(Newtonsoft.Json.JsonConvert).Assembly,
+                typeof(SixLabors.ImageSharp.Image).Assembly,
+                typeof(iText.Kernel.Pdf.PdfDocument).Assembly,
+                typeof(HtmlAgilityPack.HtmlDocument).Assembly,
+                typeof(Tesseract.TesseractEngine).Assembly, // Correct reference for Tesseract
+                typeof(Emgu.CV.Image<,>).Assembly // Assuming the usage of generic Image class from Emgu.CV
+            )
+            .AddImports(
+                // Pre-imported namespaces
+                "System",
+                "System.Net.Http",
+                "System.IO",
+                "System.Linq",
+                "System.Text",
+                "System.Collections.Generic",
+                "Newtonsoft.Json",
+                "SixLabors.ImageSharp",
+                "iText.Kernel.Pdf",
+                "HtmlAgilityPack",
+                "Tesseract", // Namespace for Tesseract
+                "Emgu.CV",
+                "Emgu.CV.Structure"
+            );
+
+        return scriptOptions;
     }
 
     public class Globals
