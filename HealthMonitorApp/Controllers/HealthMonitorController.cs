@@ -4,8 +4,14 @@ using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HealthMonitorApp.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+
 
 namespace HealthMonitorApp.Controllers;
 
@@ -109,6 +115,7 @@ public class HealthMonitorController : Controller
 
         if (ModelState.IsValid)
         {
+            
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
@@ -137,7 +144,15 @@ public class HealthMonitorController : Controller
                         Name = model.ServiceName,
                     };
 
-                    if (!string.IsNullOrWhiteSpace(model.AssertionScript))                    {
+                    if (!string.IsNullOrWhiteSpace(model.AssertionScript)){
+                        // Verify the Assertion Script
+                        var scriptCheckResult = CheckCompilation(model.AssertionScript);
+                        if (!scriptCheckResult.Success)
+                        {
+                            // Handle and return compilation errors
+                            TempData["Error"] = "Compilation error in Assertion Script.";
+                            return View(model);
+                        }
                         serviceStatus.AssertionScript = model.AssertionScript;
                     }
 
@@ -386,6 +401,50 @@ public class HealthMonitorController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+    
+    [HttpPost]
+    public (bool Success, IEnumerable<string> Errors) CheckCompilation([FromBody] string script)
+    {
+        // Construct the full script with a static method
+        string fullScript = $@"
+                using System.Net.Http;
+                public static class DynamicScript
+                {{
+                    public static bool AssertResponse(HttpResponseMessage response)
+                    {{
+                        {script}
+                    }}
+                }}";
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(fullScript);
+        var references = new MetadataReference[]
+        {
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(HttpResponseMessage).Assembly.Location)
+            // Add other necessary assemblies
+        };
+
+        var compilation = CSharpCompilation.Create("DynamicScriptAssembly")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddReferences(references)
+            .AddSyntaxTrees(syntaxTree);
+
+        using (var ms = new MemoryStream())
+        {
+            EmitResult result = compilation.Emit(ms);
+            if (!result.Success)
+            {
+                var errors = result.Diagnostics
+                    .Where(diagnostic => diagnostic.IsWarningAsError || diagnostic.Severity == DiagnosticSeverity.Error)
+                    .Select(diagnostic => diagnostic.ToString());
+
+                return (false, errors);
+            }
+
+            return (true, Enumerable.Empty<string>());
+
+        }
     }
 
 }

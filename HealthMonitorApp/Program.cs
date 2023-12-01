@@ -13,6 +13,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<HealthCheckService>();
+builder.Services.AddScoped<AssertionService>();
 builder.Services.AddTransient<DataSeeder>();  // Register DataSeeder as a service
 builder.Services.AddHostedService<HealthCheckHostedService>();
 builder.Services.AddSignalR();

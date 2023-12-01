@@ -38,13 +38,21 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "CS-Script": {
-              "target": "Package",
-              "version": "[4.8.8, )"
-            },
             "Jint": {
               "target": "Package",
               "version": "[2.11.58, )"
+            },
+            "Microsoft.CodeAnalysis.CSharp": {
+              "target": "Package",
+              "version": "[4.8.0, )"
+            },
+            "Microsoft.CodeAnalysis.CSharp.Scripting": {
+              "target": "Package",
+              "version": "[4.8.0, )"
+            },
+            "Microsoft.CodeAnalysis.Scripting": {
+              "target": "Package",
+              "version": "[4.8.0, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",

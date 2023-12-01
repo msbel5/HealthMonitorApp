@@ -85,7 +85,14 @@
             </div>
         </form>
         <div id="errorDiv" style="color: red; display:none;">
-            <strong>Error:</strong> <span id="errorMsg"></span>
+            <strong>Error:</strong> <span id="errorMsg">
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">
+                        @TempData["Error"]
+                    </div>
+                }
+            </span>
         </div>
     </div>
 
@@ -178,6 +185,8 @@
                     commands.push($(this).val());
                 });
                 $('.curl-command:first').val(commands.join('&&&'));
+                
+                
             });
         });
     </script>

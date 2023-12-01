@@ -148,7 +148,6 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Debug/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Debug/net8.0/ref/HealthMonitorApp.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Debug/net8.0/BouncyCastle.Crypto.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Debug/net8.0/CSScriptLib.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Debug/net8.0/itextsharp.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Debug/net8.0/Microsoft.CodeAnalysis.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Debug/net8.0/Microsoft.CodeAnalysis.CSharp.dll

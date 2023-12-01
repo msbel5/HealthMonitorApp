@@ -1,21 +1,12 @@
-using System;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using CSScriptLib;
 using HealthMonitorApp.Models;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using iTextSharp.text.pdf;
-using iTextSharp.text.pdf.parser;
-using System.IO;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CSharp.RuntimeBinder;
+
 
 namespace HealthMonitorApp.Services
 {
@@ -23,12 +14,14 @@ namespace HealthMonitorApp.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<HealthCheckService> _logger;
+        private readonly AssertionService _assertionService;
         private const string CurlDelimiter = "&&&";  // Delimiter for separating multiple cURL commands
 
-        public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger)
+        public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger, AssertionService assertionService)
         {
             _context = context;
             _logger = logger;
+            _assertionService = assertionService;
         }
 
         public async Task CheckServiceStatusHealthAsync(ServiceStatus serviceStatus)
@@ -91,10 +84,26 @@ namespace HealthMonitorApp.Services
             {
                 foreach (var responseMessage in responseMessages)
                 {
-                    isHealthy &= await ExecuteCustomAssertion(responseMessage, serviceStatus.AssertionScript);
+                    if (responseMessage == null || responseMessage.Content == null)
+                    {
+                        _logger.LogError("Null or empty response received.");
+                        isHealthy = false;
+                        break; // Exit the loop if any response is invalid
+                    }
+                    
+                    bool result = await _assertionService.ExecuteCustomAssertion(responseMessage, serviceStatus.AssertionScript);
+        
+                    if (!result)
+                    {
+                        _logger.LogInformation("Assertion failed for a response.");
+                        isHealthy = false;
+                        break; // Exit the loop if any assertion fails
+                    }  
+                    _logger.LogInformation("Assertion passed for a response.");
+                    
                 }
             }
-
+            
             serviceStatus.IsHealthy = isHealthy;
             serviceStatus.ResponseContent = responseContentBuilder.ToString();
             stopwatch.Stop();
@@ -113,21 +122,6 @@ namespace HealthMonitorApp.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<bool> ExecuteCustomAssertion(HttpResponseMessage response, string script)
-        {
-            try
-            {
-                var assertMethod = CSScript.Evaluator
-                    .CreateDelegate($"bool AssertResponse(System.Net.Http.HttpResponseMessage responseMessage) {{ {script} }}");
-
-                return (bool)assertMethod(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Assertion script execution failed: {ex.Message}");
-                return false;  // Depending on your policy, you might want to handle this differently
-            }
-        }
 
         private bool IsCurlCommand(string command)
         {
@@ -245,4 +239,3 @@ namespace HealthMonitorApp.Services
 
     }
 }
-
