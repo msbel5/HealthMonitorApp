@@ -9,8 +9,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
 
 
 namespace HealthMonitorApp.Controllers;
@@ -78,7 +76,7 @@ public class HealthMonitorController : Controller
                 Name = service.Name,
                 IsHealthy = service.IsHealthy,
                 ApiGroupName = service.ApiEndpoint.ApiGroup.Name,
-                CurrentResponseTime = service.ResponseTime, // Assuming ResponseTime is the property name in ServiceStatus
+                CurrentResponseTime = service.ResponseTime,
                 LastThreeResponseTimes = lastThreeHistories,
                 AverageResponseTime = averageResponseTime,
                 LastCheck = service.CheckedAt
@@ -113,72 +111,82 @@ public class HealthMonitorController : Controller
     {
         _logger.LogInformation($"Creating service status with model: {JsonConvert.SerializeObject(model)}");
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            
-            using (var transaction = await _context.Database.BeginTransactionAsync())
+            // Log the validation errors
+            foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
             {
-                try
+                _logger.LogWarning(error.ErrorMessage);
+            }
+
+            // Return the view with the current model to show validation errors
+            return View(model);
+        }
+        else
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                ApiGroup apiGroup;
+
+                if (model.ApiGroupId == "addNew" && !string.IsNullOrEmpty(model.NewApiGroupName))
                 {
-                    ApiGroup apiGroup;
-
-                    if (model.ApiGroupId == "addNew" && !string.IsNullOrEmpty(model.NewApiGroupName))
-                    {
-                        apiGroup = new ApiGroup { Name = model.NewApiGroupName };
-                        _context.ApiGroups.Add(apiGroup);
-                    }
-                    else if (int.TryParse(model.ApiGroupId, out var groupId))
-                    {
-                        apiGroup = await _context.ApiGroups.FindAsync(groupId);
-                    }
-                    else
-                    {
-                        apiGroup = new ApiGroup { Name = ExtractApiGroupName(model.cURL) };
-                        _context.ApiGroups.Add(apiGroup);
-                    }
-
-                    await _context.SaveChangesAsync();
-
-                    var serviceStatus = new ServiceStatus
-                    {
-                        Name = model.ServiceName,
-                    };
-
-                    if (!string.IsNullOrWhiteSpace(model.AssertionScript)){
-                        // Verify the Assertion Script
-                        var scriptCheckResult = CheckCompilation(model.AssertionScript);
-                        if (!scriptCheckResult.Success)
-                        {
-                            // Handle and return compilation errors
-                            TempData["Error"] = "Compilation error in Assertion Script.";
-                            return View(model);
-                        }
-                        serviceStatus.AssertionScript = model.AssertionScript;
-                    }
-
-                    _context.ServiceStatuses.Add(serviceStatus);
-                    await _context.SaveChangesAsync();
-
-                    var apiEndpoint = new ApiEndpoint
-                    {
-                        Name = ExtractApiName(model.cURL),
-                        cURL = model.cURL,
-                        ExpectedStatusCode = model.ExpectedStatusCode,
-                        ApiGroupID = apiGroup.ID,
-                        ServiceStatusID = serviceStatus.ID
-                    };
-
-                    _context.ApiEndpoints.Add(apiEndpoint);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                    await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
-                    return RedirectToAction(nameof(Index));
+                    apiGroup = new ApiGroup { Name = model.NewApiGroupName };
+                    _context.ApiGroups.Add(apiGroup);
                 }
-                catch (Exception ex)
+                else if (int.TryParse(model.ApiGroupId, out var groupId))
                 {
-                    _logger.LogError($"Error: {ex.Message}");
-                    await transaction.RollbackAsync();
+                    apiGroup = await _context.ApiGroups.FindAsync(groupId);
                 }
+                else
+                {
+                    apiGroup = new ApiGroup { Name = ExtractApiGroupName(model.cURL) };
+                    _context.ApiGroups.Add(apiGroup);
+                }
+
+                await _context.SaveChangesAsync();
+
+                var serviceStatus = new ServiceStatus
+                {
+                    Name = model.ServiceName,
+                };
+
+                if (!string.IsNullOrWhiteSpace(model.AssertionScript))
+                {
+                    // Verify the Assertion Script
+                    var scriptCheckResult = CheckCompilation(model.AssertionScript);
+                    if (!scriptCheckResult.Success)
+                    {
+                        // Handle and return compilation errors
+                        TempData["Error"] = "Compilation error in Assertion Script.";
+                        return View(model);
+                    }
+
+                    serviceStatus.AssertionScript = model.AssertionScript;
+                }
+
+                _context.ServiceStatuses.Add(serviceStatus);
+                await _context.SaveChangesAsync();
+
+                var apiEndpoint = new ApiEndpoint
+                {
+                    Name = ExtractApiName(model.cURL),
+                    cURL = model.cURL,
+                    ExpectedStatusCode = model.ExpectedStatusCode,
+                    ApiGroupID = apiGroup.ID,
+                    ServiceStatusID = serviceStatus.ID
+                };
+
+                _context.ApiEndpoints.Add(apiEndpoint);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error: {ex.Message}");
+                await transaction.RollbackAsync();
             }
         }
 

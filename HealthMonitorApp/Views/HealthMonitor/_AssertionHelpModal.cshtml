@@ -1,0 +1,33 @@
+<div id="assertionHelpModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="assertionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assertionHelpModalLabel">Assertion Service Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This assertion service allows you to write custom scripts to validate various types of HTTP responses. Below are some predefined scripts that you can add to the editor:</p>
+                <div class="d-grid gap-2">
+                    <button id="addPdfTextCheck" class="btn btn-outline-primary">Add PDF Contains Specific Text Test</button>
+                    <button id="addJsonValueCheck" class="btn btn-outline-primary">Add JSON Value Test</button>
+                    <button id="addImageTextCheck" class="btn btn-outline-primary">Add Image Has Specific Text Test</button>
+                    <button id="addZipFileCheck" class="btn btn-outline-primary">Add Zip File Has Specific File Test</button>
+                    <button id="addResponseTextCheck" class="btn btn-outline-primary">Add Response Has Specific Text Test</button>
+                </div>
+                <hr>
+                <div class="usage-guide">
+                    <h6>How to Use:</h6>
+                    <ul>
+                        <li>Select a script template from the buttons above.</li>
+                        <li>The script will be inserted into the Monaco editor.</li>
+                        <li>Customize the script as needed for your specific test case.</li>
+                        <li>Submit the form to apply the assertion script.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

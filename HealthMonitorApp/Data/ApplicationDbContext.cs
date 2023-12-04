@@ -1,6 +1,7 @@
+using HealthMonitorApp.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthMonitorApp.Models
+namespace HealthMonitorApp.Data
 {
     public class ApplicationDbContext : DbContext
     {

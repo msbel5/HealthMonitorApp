@@ -22,7 +22,7 @@
             background-color: #f9f9f9;
             border: 1px solid #ccc;
             border-radius: 4px;
-            padding: 0; /* Remove padding to allow the editor to fill the space */
+            padding: 5px; /* Remove padding to allow the editor to fill the space */
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden; /* Add this to prevent overflow */
         }
@@ -30,84 +30,112 @@
 </head>
 
 <body>
-    <div class="container mt-5">
-        <h2 class="text-center">Edit Service Status</h2>
-        <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
-            @Html.HiddenFor(model => model.ID)
+<div class="container mt-5">
+    <h2 class="text-center">Edit Service Status</h2>
+    <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
+        @Html.HiddenFor(model => model.ID)
 
-            <!-- Service Status Name -->
-            <div class="form-group">
-                <label asp-for="Name">Service Status Name</label>
-                <input asp-for="Name" class="form-control" required />
-            </div>
-
-            <!-- Expected Status Code -->
-            <div class="form-group">
-                <label asp-for="ExpectedStatusCode">Expected Status Code</label>
-                <input asp-for="ExpectedStatusCode" class="form-control" required />
-            </div>
-
-            <!-- CURL Command -->
-            <div class="form-group">
-                <div class="d-flex justify-content-between align-items-center">
-                    <label for="CurlCommandEdit" class="mb-0">CURL Command</label>
-                    <div>
-                        <button type="button" id="remove-curl-command-edit" class="btn btn-link p-0" style="display: none;"><i class="fa fa-minus"></i></button>
-                        <button type="button" id="add-curl-command-edit" class="btn btn-link p-0"><i class="fa fa-plus"></i></button>
-                        <button type="button" id="helpIcon" class="btn btn-link p-0"><i class="fa fa-question-circle"></i></button>
-                    </div>
-                </div>
-                <div id="curl-commands-edit-container">
-                    <!-- Textareas will be added here dynamically -->
-                </div>
-            </div>
-
-            <!-- Existing API Groups -->
-            <div class="form-group">
-                <label asp-for="ApiGroupID">API Groups</label>
-                <select asp-for="ApiGroupID" class="form-control">
-                    <option value="0">Add New API Group</option>
-                    @foreach (var group in Model.ApiGroups)
-                    {
-                        <option value="@group.ID">@group.Name</option>
-                    }
-                </select>
-            </div>
-
-            <!-- New API Group Name -->
-            <div class="form-group" id="newApiGroupDiv" style="display:none;">
-                <label asp-for="NewApiGroupName">New API Group Name</label>
-                <input asp-for="NewApiGroupName" class="form-control" />
-            </div>
-
-            <!-- Custom Assertion -->
-            <div class="form-group">
-                <label asp-for="AssertionScript">Assertion Script (Optional)</label>
-                <div class="code-display" id="editor"></div> <!-- Monaco Editor will be initialized here -->
-            </div>
-
-            <!-- Update Button -->
-            <div class="form-group text-center">
-                <button type="submit" class="btn btn-primary">Update</button>
-            </div>
-        </form>
-
-        <div>
-            <a asp-action="Index">Back to List</a>
+        <!-- Service Status Name -->
+        <div class="form-group">
+            <label asp-for="Name">Service Status Name</label>
+            <input asp-for="Name" class="form-control" required />
         </div>
+
+        <!-- Expected Status Code -->
+        <div class="form-group">
+            <label asp-for="ExpectedStatusCode">Expected Status Code</label>
+            <input asp-for="ExpectedStatusCode" class="form-control" required />
+        </div>
+
+        <!-- CURL Command -->
+        <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center">
+                <label for="CurlCommandEdit" class="mb-0">CURL Command</label>
+                <div>
+                    <button type="button" id="remove-curl-command-edit" class="btn btn-link p-0" style="display: none;"><i class="fa fa-minus"></i></button>
+                    <button type="button" id="add-curl-command-edit" class="btn btn-link p-0"><i class="fa fa-plus"></i></button>
+                    <button type="button" id="helpIcon" class="btn btn-link p-0"><i class="fa fa-question-circle"></i></button>
+                </div>
+            </div>
+            <div id="curl-commands-edit-container">
+                <!-- Textareas will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Existing API Groups -->
+        <div class="form-group">
+            <label asp-for="ApiGroupID">API Groups</label>
+            <select asp-for="ApiGroupID" class="form-control">
+                <option value="0">Add New API Group</option>
+                @foreach (var group in Model.ApiGroups)
+                {
+                    <option value="@group.ID">@group.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- New API Group Name -->
+        <div class="form-group" id="newApiGroupDiv" style="display:none;">
+            <label asp-for="NewApiGroupName">New API Group Name</label>
+            <input asp-for="NewApiGroupName" class="form-control" />
+        </div>
+        
+        <!-- Custom Assertion -->
+        <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center">
+                <label asp-for="AssertionScript">Assertion Script (Optional)</label>
+                <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#assertionHelpModal"><i class="fa fa-question-circle"></i></button>
+            </div>
+            <div class="code-display" id="editor"></div>
+        </div>
+        
+        <!-- Update Button -->
+        <div class="form-group text-center">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+    </form>
+
+    <div>
+        <a asp-action="Index">Back to List</a>
     </div>
+</div>
 </body>
+
+@await Html.PartialAsync("_AssertionHelpModal")
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
     <script>
+    
+         var editor; // Declare editor globally
+            
+        function initializeMonacoEditor(assertionScript) {
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+            require(['vs/editor/editor.main'], function () {
+                editor = monaco.editor.create(document.getElementById('editor'), {
+                    language: 'csharp',
+                    theme: 'vs-dark',
+                    value: assertionScript,
+                    readOnly: false,
+                    minimap: { enabled: false },
+                    automaticLayout: true
+                });
+            });
+        }
+    
+        function insertScriptIntoEditor(script) {
+            if (editor && typeof editor.setValue === 'function') {
+                editor.setValue(script);
+            }
+        }
+            
         $(document).ready(function () {
             function addCurlCommandEdit(command = '') {
                 var newTextArea = '<div class="curl-command-edit-container"><textarea class="form-control curl-command-edit mt-2" rows="4">' + command + '</textarea></div>';
                 $('#curl-commands-edit-container').append(newTextArea);
                 $('#remove-curl-command-edit').show();
             }
-
+        
             var encodedCurlCommands = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.CURL))';
             var curlCommands = encodedCurlCommands.includes('&&&') ? encodedCurlCommands.split('&&&') : [encodedCurlCommands];
 
@@ -128,8 +156,100 @@
                     }
                 }
             });
+            
+            // Get the assertion script from the model and initialize the editor
+            var assertionScript = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.AssertionScript))';
+            initializeMonacoEditor(assertionScript);
+            
+            // Initialize Bootstrap Modal
+            var assertionHelpModal = new bootstrap.Modal(document.getElementById('assertionHelpModal'));
+            
+            $('#editorHelpIcon').click(function() {
+                assertionHelpModal.show();
+            });
+            
+            $(".close, .btn-secondary").click(function(){
+                assertionHelpModal.hide();
+            });
+            
+            // Handlers for predefined script buttons
+            $('#addPdfTextCheck').click(function() {
+                var pdfScript =
+`using (var memoryStream = new MemoryStream())
+{
+    await response.Content.CopyToAsync(memoryStream);
+    memoryStream.Position = 0; // Reset the position after copying
+
+    using (var pdfReader = new iText.Kernel.Pdf.PdfReader(memoryStream))
+    using (var pdfDocument = new iText.Kernel.Pdf.PdfDocument(pdfReader))
+    {
+        var strategy = new iText.Kernel.Pdf.Canvas.Parser.Listener.SimpleTextExtractionStrategy();
+        var text = new StringBuilder();
+        for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
+        {
+            var pageContent = iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+            text.AppendLine(pageContent);
+        }
+
+        return text.ToString().Contains(\"A Simple PDF File\");
+    }
+}`;
+
+                insertScriptIntoEditor(pdfScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addJsonValueCheck').click(function() {
+                var jsonScript = 
+`var responseContent = await response.Content.ReadAsStringAsync();
+var jsonResponse = Newtonsoft.Json.Linq.JObject.Parse(responseContent);
+return (string)jsonResponse["specificKey"] == "expectedValue";`;
+                insertScriptIntoEditor(jsonScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addImageTextCheck').click(function() {
+                var imageTextCheckScript = 
+`using (var imageStream = await response.Content.ReadAsStreamAsync())
+{
+    var ocrEngine = new Tesseract.TesseractEngine(@@"./tessdata", "eng", Tesseract.EngineMode.Default);
+    var img = Pix.LoadFromStream(imageStream);
+    var page = ocrEngine.Process(img);
+    var text = page.GetText();
+    return text.Contains("expectedTextInImage");
+}`;
+                insertScriptIntoEditor(imageTextCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addZipFileCheck').click(function() {
+                var zipFileCheckScript = 
+`using (var zipStream = await response.Content.ReadAsStreamAsync())
+using (var archive = new System.IO.Compression.ZipArchive(zipStream))
+{
+    return archive.Entries.Any(entry => entry.FullName == "specificFileName.txt");
+}`;
+                insertScriptIntoEditor(zipFileCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addResponseTextCheck').click(function() {
+                var responseTextCheckScript = 
+`var responseText = await response.Content.ReadAsStringAsync();
+return responseText.Contains("expectedTextInResponse");`;
+                insertScriptIntoEditor(responseTextCheckScript);
+                assertionHelpModal.hide();
+            });
+                        
+            // Help icon handler
+            $('#helpIcon').click(function () {
+                var message = 'You can add dynamic strings using the following format: \n';
+                message += '${{JavaScript Code}}';
+                alert(message);
+            });
 
             $('form').submit(function (e) {
+                // Combine all curl commands into a single string
                 var combinedCommands = $('.curl-command-edit').map(function() {
                     return $(this).val();
                 }).get().join('&&&');
@@ -139,6 +259,16 @@
                     name: 'CURL',
                     value: combinedCommands
                 }).appendTo('form');
+                // Add assertion script to form
+                if (editor) {
+                        var assertionScript = editor.getValue();
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'AssertionScript',
+                            value: assertionScript
+                        }).appendTo('form');
+                    }
+
             });
 
             $('#ApiGroupID').change(function () {
@@ -149,49 +279,9 @@
                 }
             });
 
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
-            require(['vs/editor/editor.main'], function () {
-                var editor = monaco.editor.create(document.getElementById('editor'), {
-                    language: 'csharp',
-                    theme: 'vs-dark',
-                    value: `@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.AssertionScript))`,
-                    minimap: { enabled: false }, // Disable or adjust minimap settings
-                    automaticLayout: true /* This ensures the editor size adjusts to the container */
-                });
-
-                // Function to manage read-only lines
-                function updateReadOnlyLines() {
-                    var model = editor.getModel();
-                    var lineCount = model.getLineCount();
-                    var firstLineLength = model.getLineMaxColumn(1);
-                    var lastLineLength = model.getLineMaxColumn(lineCount);
-
-                    var readOnlyRanges = [
-                        new monaco.Range(1, 1, 1, firstLineLength), // Entire first line
-                        new monaco.Range(lineCount, 1, lineCount, lastLineLength) // Entire last line
-                    ];
-
-                    return editor.deltaDecorations([], readOnlyRanges.map(range => ({
-                        range: range, options: { isWholeLine: true, linesDecorationsClassName: 'readOnlyDecoration' }
-                    })));
-                }
-
-                var decorations = updateReadOnlyLines();
-                editor.onDidChangeModelContent(function (e) {
-                    // Update read-only decorations
-                    decorations = updateReadOnlyLines();
-                });
-
-                $('form').submit(function (e) {
-                    var code = editor.getValue();
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'AssertionScript',
-                        value: code
-                    }).appendTo('form');
-                });
-            });
+            
         });
     </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
 }

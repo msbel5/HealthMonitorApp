@@ -1,4 +1,4 @@
-namespace HealthMonitorApp.Models;
+namespace HealthMonitorApp.ViewModels;
 
 public class ErrorViewModel
 {

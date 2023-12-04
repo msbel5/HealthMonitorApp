@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Text.RegularExpressions;
+using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -106,6 +108,7 @@ namespace HealthMonitorApp.Services
             
             serviceStatus.IsHealthy = isHealthy;
             serviceStatus.ResponseContent = responseContentBuilder.ToString();
+            serviceStatus.AssertionScript = serviceStatus.AssertionScript;
             stopwatch.Stop();
             serviceStatus.CheckedAt = DateTime.Now;
             serviceStatus.ResponseTime = stopwatch.ElapsedMilliseconds / 1000.0;
@@ -131,7 +134,34 @@ namespace HealthMonitorApp.Services
         private async Task<HttpResponseMessage> HandleLiteralUrlAsync(ApiEndpoint apiEndpoint)
         {
             using var httpClient = new HttpClient();
-            return await httpClient.GetAsync(apiEndpoint.cURL);
+            var response = await httpClient.GetAsync(apiEndpoint.cURL);
+
+            // Ensure the response is successful
+            response.EnsureSuccessStatusCode();
+
+            // Read the raw response stream
+            var responseStream = await response.Content.ReadAsStreamAsync();
+
+            // Determine the encoding from the 'Content-Type' header or default to UTF-8
+            var charset = response.Content.Headers.ContentType?.CharSet ?? "UTF-8";
+            Encoding encoding;
+            try
+            {
+                encoding = Encoding.GetEncoding(charset);
+            }
+            catch (ArgumentException)
+            {
+                // If the specified charset is not supported, default to UTF-8
+                encoding = Encoding.UTF8;
+            }
+
+            // Read the response content using the determined encoding
+            using var reader = new StreamReader(responseStream, encoding);
+            var content = await reader.ReadToEndAsync();
+            // Replace the response content with the correctly encoded content
+            response.Content = new StringContent(content, Encoding.UTF8, "application/json");
+
+            return response;
         }
 
         private async Task<HttpResponseMessage> HandleCurlCommandAsync(ApiEndpoint endpoint)

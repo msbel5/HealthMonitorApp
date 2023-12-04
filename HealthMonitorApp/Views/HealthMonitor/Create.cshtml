@@ -21,7 +21,7 @@
                 background-color: #f9f9f9;
                 border: 1px solid #ccc;
                 border-radius: 4px;
-                padding: 0; /* Remove padding to allow the editor to fill the space */
+                padding: 5px; /* Remove padding to allow the editor to fill the space */
                 font-family: 'Courier New', Courier, monospace;
                 overflow: hidden; /* Add this to prevent overflow */
             }
@@ -36,11 +36,13 @@
             <div class="form-group">
                 <label for="Name">Service Status Name</label>
                 <input type="text" class="form-control" id="Name" name="ServiceName" required>
+                @Html.ValidationMessageFor(model => model.ServiceName)
             </div>
             <!-- Expected Status Code -->
             <div class="form-group">
                 <label for="ExpectedStatusCode">Expected Status Code</label>
                 <input type="number" class="form-control" id="ExpectedStatusCode" name="ExpectedStatusCode" required>
+                @Html.ValidationMessageFor(model => model.ExpectedStatusCode)
             </div>
             <!-- CURL Command -->
             <div class="form-group">
@@ -55,6 +57,7 @@
                 <div id="curl-commands-container">
                     <textarea class="form-control curl-command" rows="4" name="cURL"></textarea>
                 </div>
+                @Html.ValidationMessageFor(model => model.cURL)
             </div>
             <!-- Existing API Groups -->
             <div class="form-group">
@@ -62,10 +65,9 @@
                 <select class="form-control" id="ExistingApiGroups" name="ApiGroupID">
                     <option value="auto" selected>Auto Group</option>
                     <option value="addNew">Add New API Group</option>
-                    @foreach(var group in Model.ApiGroups)
-                    {
-                        <option value="@group.ID">@group.Name</option>
-                    }
+                    @if (Model.ApiGroups != null) { 
+                        @foreach (var group in Model.ApiGroups) {
+                            <option value="@group.ID">@group.Name</option> } }
                 </select>
             </div>
             <!-- New API Group Name -->
@@ -74,11 +76,16 @@
                 <input type="text" class="form-control" id="NewApiGroupName" name="NewApiGroupName">
             </div>
 
+
             <!-- Custom Assertion -->
             <div class="form-group">
-                <label asp-for="AssertionScript">Assertion Script (Optional)</label>
-                <div class="code-display" id="editor"></div> <!-- Monaco Editor will be initialized here -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <label asp-for="AssertionScript">Assertion Script (Optional)</label>
+                    <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#assertionHelpModal"><i class="fa fa-question-circle"></i></button>
+                </div>
+                <div class="code-display" id="editor"></div>
             </div>
+            
             <!-- Create Button -->
             <div class="form-group text-center">
                 <button type="submit" class="btn btn-primary">Create</button>
@@ -100,11 +107,35 @@
         <a asp-action="Index">Back to List</a>
     </div>
     </body>
-
+    
+    @await Html.PartialAsync("_AssertionHelpModal")
+    
     @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
     <!-- Load Monaco Editor -->
     <script>
+        
+        var editor; // Declare editor globally
+    
+        function initializeMonacoEditor() {
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+            require(['vs/editor/editor.main'], function () {
+                editor = monaco.editor.create(document.getElementById('editor'), {
+                    language: 'csharp',
+                    theme: 'vs-dark',
+                    readOnly: false,
+                    minimap: { enabled: false },
+                    automaticLayout: true
+                });
+            });
+        }
+    
+        function insertScriptIntoEditor(script) {
+            if (editor && typeof editor.setValue === 'function') {
+                editor.setValue(script);
+            }
+        }
+    
         $(document).ready(function () {
             // Existing jQuery handlers
             $('#ExistingApiGroups').change(function () {
@@ -133,45 +164,92 @@
             // Help icon handler
             $('#helpIcon').click(function () {
                 var message = 'You can add dynamic strings using the following format: \n';
-                message += '${{JS_CODE}}';
+                message += '${{JavaScript Code}}';
                 alert(message);
             });
-
+            
             // Monaco Editor initialization
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
-            require(['vs/editor/editor.main'], function () {
-                var editor = monaco.editor.create(document.getElementById('editor'), {
-                    language: 'csharp',
-                    theme: 'vs-dark',
-                    value: 'public bool AssertResponse(HttpResponseMessage response){\n    // Write your code here\n}',
-                    readOnly: false,
-                    minimap: { enabled: false }, // Disable or adjust minimap settings
-                    automaticLayout: true /* This ensures the editor size adjusts to the container */
-                });
-
-                function updateReadOnlyLines() {
-                    var model = editor.getModel();
-                    var lineCount = model.getLineCount();
-                    var firstLineLength = model.getLineMaxColumn(1);
-                    var lastLineLength = model.getLineMaxColumn(lineCount);
-
-                    var readOnlyRanges = [
-                        new monaco.Range(1, 1, 1, firstLineLength),
-                        new monaco.Range(lineCount, 1, lineCount, lastLineLength)
-                    ];
-
-                    return editor.deltaDecorations([], readOnlyRanges.map(range => ({
-                        range: range, options: { isWholeLine: true, linesDecorationsClassName: 'readOnlyDecoration' }
-                    })));
-                }
-
-                var decorations = updateReadOnlyLines();
-
-                editor.onDidChangeModelContent(function (e) {
-                    decorations = updateReadOnlyLines();
-                });
+            initializeMonacoEditor();
+            
+            // Initialize Bootstrap Modal
+            var assertionHelpModal = new bootstrap.Modal(document.getElementById('assertionHelpModal'));
+            
+            $('#editorHelpIcon').click(function() {
+                assertionHelpModal.show();
             });
+            
+            $(".close, .btn-secondary").click(function(){
+                assertionHelpModal.hide();
+            });
+            
+            // Handlers for predefined script buttons
+            $('#addPdfTextCheck').click(function() {
+                var pdfScript =
+`using (var memoryStream = new MemoryStream())
+{
+    await response.Content.CopyToAsync(memoryStream);
+    memoryStream.Position = 0; // Reset the position after copying
 
+    using (var pdfReader = new iText.Kernel.Pdf.PdfReader(memoryStream))
+    using (var pdfDocument = new iText.Kernel.Pdf.PdfDocument(pdfReader))
+    {
+        var strategy = new iText.Kernel.Pdf.Canvas.Parser.Listener.SimpleTextExtractionStrategy();
+        var text = new StringBuilder();
+        for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
+        {
+            var pageContent = iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+            text.AppendLine(pageContent);
+        }
+
+        return text.ToString().Contains(\"A Simple PDF File\");
+    }
+}`;
+                insertScriptIntoEditor(pdfScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addJsonValueCheck').click(function() {
+                var jsonScript = 
+`var responseContent = await response.Content.ReadAsStringAsync();
+var jsonResponse = Newtonsoft.Json.Linq.JObject.Parse(responseContent);
+return (string)jsonResponse["specificKey"] == "expectedValue";`;
+                insertScriptIntoEditor(jsonScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addImageTextCheck').click(function() {
+                var imageTextCheckScript = 
+`using (var imageStream = await response.Content.ReadAsStreamAsync())
+{
+    var ocrEngine = new Tesseract.TesseractEngine(@@"./tessdata", "eng", Tesseract.EngineMode.Default);
+    var img = Pix.LoadFromStream(imageStream);
+    var page = ocrEngine.Process(img);
+    var text = page.GetText();
+    return text.Contains("expectedTextInImage");
+}`;
+                insertScriptIntoEditor(imageTextCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addZipFileCheck').click(function() {
+                var zipFileCheckScript = 
+`using (var zipStream = await response.Content.ReadAsStreamAsync())
+using (var archive = new System.IO.Compression.ZipArchive(zipStream))
+{
+    return archive.Entries.Any(entry => entry.FullName == "specificFileName.txt");
+}`;
+                insertScriptIntoEditor(zipFileCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addResponseTextCheck').click(function() {
+                var responseTextCheckScript = 
+`var responseText = await response.Content.ReadAsStringAsync();
+return responseText.Contains("expectedTextInResponse");`;
+                insertScriptIntoEditor(responseTextCheckScript);
+                assertionHelpModal.hide();
+            });
+                        
             $('form').submit(function (e) {
                 var code = editor.getValue();
                 $('<input>').attr({
@@ -190,5 +268,4 @@
             });
         });
     </script>
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}}
