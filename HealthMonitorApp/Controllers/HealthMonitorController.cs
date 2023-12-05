@@ -99,9 +99,7 @@ public class HealthMonitorController : Controller
         var viewModel = new ServiceStatusCreateViewModel
         {
             ApiGroups = _context.ApiGroups.ToList()
-
         };
-
         return View(viewModel);
     }
 

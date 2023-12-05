@@ -12,7 +12,7 @@ namespace HealthMonitorApp.ViewModels
         public string ServiceName { get; set; }
 
         [Required]
-        [Range(100, 599, ErrorMessage = "Expected status code must be a valid HTTP status code.")]
+        [Range(100, 599, ErrorMessage = "Expected code must be a valid HTTP status code.")]
         public int ExpectedStatusCode { get; set; }
 
         [Required]
