@@ -17,7 +17,7 @@ namespace HealthMonitorApp.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<HealthCheckService> _logger;
         private readonly AssertionService _assertionService;
-        private const string CurlDelimiter = "&&&";  // Delimiter for separating multiple cURL commands
+        private const string Delimiter = "&&&";  // Delimiter for separating multiple cURL commands
 
         public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger, AssertionService assertionService)
         {
@@ -25,6 +25,7 @@ namespace HealthMonitorApp.Services
             _logger = logger;
             _assertionService = assertionService;
         }
+        
 
         public async Task CheckServiceStatusHealthAsync(ServiceStatus serviceStatus)
         {
@@ -45,10 +46,11 @@ namespace HealthMonitorApp.Services
             var isHealthy = true;
             var responseContentBuilder = new StringBuilder();
             var responseMessages = new List<HttpResponseMessage>();
+            
 
             try
             {
-                var curlCommands = endpoint.cURL.Split(new[] { CurlDelimiter }, StringSplitOptions.RemoveEmptyEntries);
+                var curlCommands = endpoint.cURL.Split(new[] { Delimiter }, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var curlCommand in curlCommands)
                 {
@@ -65,9 +67,17 @@ namespace HealthMonitorApp.Services
                         _logger.LogInformation("Detected literal URL. Handling literal URL.");
                         response = await HandleLiteralUrlAsync(modifiedEndpoint);
                     }
+
+                    var encoding = response.Content.Headers.ContentType?.CharSet ?? "UTF-8";
+
+                    
                     responseMessages.Add(response);
-                    var responseString =  await response.Content.ReadAsStringAsync();  // Separated this line
-                    responseString = response.StatusCode + " - " + responseString;
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    responseString = "\t" + response.StatusCode + Environment.NewLine + responseString;
+                    if (responseMessages.Count > 1)
+                    {
+                        responseString = Environment.NewLine + Delimiter + Environment.NewLine + Environment.NewLine + responseString;
+                    }
                     responseContentBuilder.AppendLine(responseString);  // and this line
                     isHealthy &= response.StatusCode == (HttpStatusCode)endpoint.ExpectedStatusCode;
 
@@ -86,13 +96,6 @@ namespace HealthMonitorApp.Services
             {
                 foreach (var responseMessage in responseMessages)
                 {
-                    if (responseMessage == null || responseMessage.Content == null)
-                    {
-                        _logger.LogError("Null or empty response received.");
-                        isHealthy = false;
-                        break; // Exit the loop if any response is invalid
-                    }
-                    
                     bool result = await _assertionService.ExecuteCustomAssertion(responseMessage, serviceStatus.AssertionScript);
         
                     if (!result)
@@ -124,7 +127,6 @@ namespace HealthMonitorApp.Services
             _context.ServiceStatusHistories.Add(history);
             await _context.SaveChangesAsync();
         }
-
 
         private bool IsCurlCommand(string command)
         {
@@ -241,6 +243,7 @@ namespace HealthMonitorApp.Services
                     }
                 }
             }
+            
 
             // Auto-add headers if necessary
             if (hasContentTypeJson && !hasAcceptHeader && !request.Headers.Contains("Accept"))

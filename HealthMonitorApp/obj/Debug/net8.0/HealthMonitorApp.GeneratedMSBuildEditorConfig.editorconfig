@@ -90,6 +90,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSGVhbHRoTW9uaXRvci9fRGVsZXRlQ29uZmlybWF0aW9uLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/HealthMonitor/_DynamicStringHelpModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSGVhbHRoTW9uaXRvci9fRHluYW1pY1N0cmluZ0hlbHBNb2RhbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL0Vycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 

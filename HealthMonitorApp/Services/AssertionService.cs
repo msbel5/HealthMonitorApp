@@ -1,6 +1,7 @@
 using System.Net;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Tesseract;
@@ -29,7 +30,7 @@ public class AssertionService
 
             var scriptOptions = GetScriptOptions();
 
-            var globals = new Globals { response = response };
+            var globals = new ScriptGlobals { response = response };
 
             bool result = await CSharpScript.EvaluateAsync<bool>(
                 userScript, scriptOptions, globals);
@@ -59,8 +60,8 @@ public class AssertionService
                 typeof(SixLabors.ImageSharp.Image).Assembly,
                 typeof(iText.Kernel.Pdf.PdfDocument).Assembly,
                 typeof(HtmlAgilityPack.HtmlDocument).Assembly,
-                typeof(Tesseract.TesseractEngine).Assembly, // Correct reference for Tesseract
-                typeof(Emgu.CV.Image<,>).Assembly // Assuming the usage of generic Image class from Emgu.CV
+                typeof(Tesseract.TesseractEngine).Assembly, 
+                typeof(Emgu.CV.Image<,>).Assembly 
             )
             .AddImports(
                 // Pre-imported namespaces
@@ -74,7 +75,7 @@ public class AssertionService
                 "SixLabors.ImageSharp",
                 "iText.Kernel.Pdf",
                 "HtmlAgilityPack",
-                "Tesseract", // Namespace for Tesseract
+                "Tesseract", 
                 "Emgu.CV",
                 "Emgu.CV.Structure"
             );
@@ -82,61 +83,47 @@ public class AssertionService
         return scriptOptions;
     }
 
-    public class Globals
+    public class ScriptGlobals
     {
         public HttpResponseMessage response { get; set; }
     }
-
-
     
-    /*public async Task<bool> ExecuteCustomAssertion(HttpResponseMessage response, string userScript)
+    public async Task<(bool isValid, List<string> diagnostics)> CheckScript(string userScript, HttpResponseMessage response)
     {
+        var diagnostics = new List<string>();
+        var isValid = false;
+
         try
         {
-            _logger.LogInformation("User Script: \n" + userScript);
+            // Check for script correctness without executing it
+            var scriptOptions = GetScriptOptions();
+            var script = CSharpScript.Create<bool>(userScript, scriptOptions, typeof(ScriptGlobals));
+            var compilation = script.GetCompilation();
+            var result = compilation.GetDiagnostics();
 
-            var scriptOptions = ScriptOptions.Default
-                .AddReferences(typeof(HttpResponseMessage).Assembly)
-                .AddImports("System.Net.Http");
-
-            var completeScript = $@"
-            bool AssertionMethod(HttpResponseMessage response)
-            {{
-                {userScript}
-            }}
-            return AssertionMethod(response);
-        ";
-
-            _logger.LogInformation("Complete Script: \n" + completeScript);
-
-            var script = CSharpScript.Create<bool>(
-                code: completeScript,
-                options: scriptOptions);
-
-            // Compile the script and log any compilation diagnostics
-            var diagnostics = script.Compile();
-            foreach (var diag in diagnostics)
+            foreach (var diagnostic in result)
             {
-                _logger.LogInformation("Compilation Diagnostic: " + diag);
+                if (diagnostic.Severity == DiagnosticSeverity.Error)
+                {
+                    diagnostics.Add(diagnostic.ToString());
+                }
             }
 
-            var delegateScript = script.CreateDelegate();
-
-            // Execute the script
-            bool result = await delegateScript(response);
-
-            _logger.LogInformation("Script Execution Result: " + result);
-            return result;
-        }
-        catch (CompilationErrorException e)
-        {
-            _logger.LogInformation("Script compilation error: " + e.Message);
-            return false;
+            // If no errors, execute the script with HttpResponseMessage
+            if (!diagnostics.Any())
+            {
+                var globals = new ScriptGlobals { response = response };
+                bool executionResult = await script.RunAsync(globals).ContinueWith(t => t.Result.ReturnValue);
+                isValid = true;
+                _logger.LogInformation("Script Execution Result: " + executionResult);
+            }
         }
         catch (Exception e)
         {
-            _logger.LogInformation("Script execution error: " + e.Message);
-            return false;
+            diagnostics.Add("Error in script execution: " + e.Message);
         }
-    }*/
+
+        return (isValid, diagnostics);
+    }
+    
 }

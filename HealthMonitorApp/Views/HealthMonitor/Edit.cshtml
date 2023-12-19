@@ -67,10 +67,9 @@
             <label asp-for="ApiGroupID">API Groups</label>
             <select asp-for="ApiGroupID" class="form-control">
                 <option value="0">Add New API Group</option>
-                @foreach (var group in Model.ApiGroups)
-                {
-                    <option value="@group.ID">@group.Name</option>
-                }
+                    @if (Model.ApiGroups != null) { 
+                        @foreach (var group in Model.ApiGroups) {
+                            <option value="@group.ID">@group.Name</option> } }
             </select>
         </div>
 
@@ -102,6 +101,7 @@
 </body>
 
 @await Html.PartialAsync("_AssertionHelpModal")
+@await Html.PartialAsync("_DynamicStringHelpModal")
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
@@ -117,6 +117,7 @@
                     theme: 'vs-dark',
                     value: assertionScript,
                     readOnly: false,
+                    lineNumbers: 'on', // Optionally turn off line numbers if you prefer
                     minimap: { enabled: false },
                     automaticLayout: true
                 });
@@ -131,7 +132,7 @@
             
         $(document).ready(function () {
             function addCurlCommandEdit(command = '') {
-                var newTextArea = '<div class="curl-command-edit-container"><textarea class="form-control curl-command-edit mt-2" rows="4">' + command + '</textarea></div>';
+                var newTextArea = '<div class="curl-command-edit-container"><textarea class="form-control curl-command-edit mt-2" rows="4" >' + command + '</textarea></div>';
                 $('#curl-commands-edit-container').append(newTextArea);
                 $('#remove-curl-command-edit').show();
             }
@@ -242,10 +243,14 @@ return responseText.Contains("expectedTextInResponse");`;
             });
                         
             // Help icon handler
+            var dynamicStringHelpModal = new bootstrap.Modal(document.getElementById('dynamicStringHelpModal'));
+
             $('#helpIcon').click(function () {
-                var message = 'You can add dynamic strings using the following format: \n';
-                message += '${{JavaScript Code}}';
-                alert(message);
+                dynamicStringHelpModal.show();
+            });
+            
+            $(".btn-dynamicString").click(function(){
+                dynamicStringHelpModal.hide();
             });
 
             $('form').submit(function (e) {

@@ -1,3 +1,14 @@
+<style>
+    .code-display {
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        font-family: 'Courier New', Courier, monospace;
+        white-space: pre-wrap; /* For text wrapping */
+        overflow-x: auto; /* For horizontal scrolling */
+    }
+</style>
 <div id="assertionHelpModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="assertionHelpModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -6,7 +17,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>This assertion service allows you to write custom scripts to validate various types of HTTP responses. Below are some predefined scripts that you can add to the editor:</p>
+                <p>Welcome to the Custom Assertion Script Editor! This guide will help you write effective C# scripts to validate HTTP responses. Below, you'll find examples and explanations on how to use the included libraries and handle common assertion scenarios.</p>
                 <div class="d-grid gap-2">
                     <button id="addPdfTextCheck" class="btn btn-outline-primary">Add PDF Contains Specific Text Test</button>
                     <button id="addJsonValueCheck" class="btn btn-outline-primary">Add JSON Value Test</button>
@@ -15,14 +26,117 @@
                     <button id="addResponseTextCheck" class="btn btn-outline-primary">Add Response Has Specific Text Test</button>
                 </div>
                 <hr>
-                <div class="usage-guide">
-                    <h6>How to Use:</h6>
+                <!-- Writing Your Script -->
+                <div class="script-writing-introduction">
+                    <h6>Writing Your Script:</h6>
+                    <p>Your scripts should be in C#. Use 'response', an instance of 'HttpResponseMessage', to inspect and validate the response from your HTTP requests. Here's how you can check if a response is successful:</p>
+                    <pre>
+                        <div class="code-display">
+<code>
+bool isSuccessful = response.IsSuccessStatusCode;
+return isSuccessful;
+</code>
+                        </div>
+                    </pre>
+                    <p>For more complex validations, you can parse the response content. Here's an example:</p>
+                    <pre>
+                        <div class="code-display">
+<code>
+var responseContent = await response.Content.ReadAsStringAsync();
+return responseContent.Contains("expectedContent");
+</code>
+                        </div>
+                    </pre>
+                </div>
+
+                <!-- Using Statements and Memory Management -->
+                <div class="using-statements">
+                    <h6>Using 'using' Statements:</h6>
+                    <p>The 'using' statement is crucial for managing resources, such as memory streams, ensuring they are disposed of properly. Here's an example of using a memory stream:</p>
+                    <pre>
+                        <div class="code-display">
+                            <code>
+using (var memoryStream = new MemoryStream())
+{
+    await response.Content.CopyToAsync(memoryStream);
+    // Use memoryStream here
+}
+</code>
+                        </div>
+                    </pre>
+                </div>
+
+                <!-- Libraries and Their Usage -->
+                <div class="libraries-usage">
+                    <h6>Included Libraries:</h6>
+                    <p>Your scripts have access to several libraries. Here are some examples of how you can use them:</p>
                     <ul>
-                        <li>Select a script template from the buttons above.</li>
-                        <li>The script will be inserted into the Monaco editor.</li>
-                        <li>Customize the script as needed for your specific test case.</li>
-                        <li>Submit the form to apply the assertion script.</li>
+                        <li>
+                            <b>Newtonsoft.Json:</b> Parse and manipulate JSON data.
+                            <pre>
+                                <div class="code-display">
+<code>
+var jsonResponse = Newtonsoft.Json.Linq.JObject.Parse(responseContent);
+return jsonResponse["key"].ToString() == "value";
+</code>
+                                </div>
+                            </pre>
+                        </li>
+                        <li>
+                            <b>iText.Kernel.Pdf:</b> Read PDF documents.
+                            <pre>
+                                <div class="code-display">
+    <code>
+    using (var memoryStream = new MemoryStream())
+    {
+        await response.Content.CopyToAsync(memoryStream);
+        using (var pdfReader = new iText.Kernel.Pdf.PdfReader(memoryStream))
+        {
+            // PDF processing here
+        }
+    }
+    </code>
+                                </div>
+                            </pre>
+                        </li>
+                        <li>
+                            <b>HtmlAgilityPack:</b> Parse HTML content.
+                            <pre>
+                                <div class="code-display">
+<code>
+var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+htmlDoc.LoadHtml(responseContent);
+// Query htmlDoc here
+</code>
+                                </div>
+                            </pre>
+                        </li>
+                        <li>
+                            <b>Tesseract:</b> OCR processing in images.
+                            <pre>
+                                <div class="code-display">
+<code>
+// Assuming image content in response
+using (var imageStream = await response.Content.ReadAsStreamAsync())
+{
+    var ocrEngine = new Tesseract.TesseractEngine(@@"./tessdata", "eng");
+    using (var img = Pix.LoadFromStream(imageStream))
+    {
+        var page = ocrEngine.Process(img);
+        return page.GetText().Contains("expectedText");
+    }
+}
+</code>
+                                </div>
+                            </pre>
+                        </li>
                     </ul>
+                </div>
+
+                <!-- Additional Scripting Tips -->
+                <div class="additional-tips">
+                    <h6>Scripting Tips:</h6>
+                    <p>Consider edge cases and error handling in your scripts for robust validation. Utilize comments to document your logic and make your scripts more readable.</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -31,3 +145,74 @@
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+            // Handlers for predefined script buttons
+            $('#addPdfTextCheck').click(function() {
+                var pdfScript =
+`using (var memoryStream = new MemoryStream())
+{
+    await response.Content.CopyToAsync(memoryStream);
+    memoryStream.Position = 0; // Reset the position after copying
+
+    using (var pdfReader = new iText.Kernel.Pdf.PdfReader(memoryStream))
+    using (var pdfDocument = new iText.Kernel.Pdf.PdfDocument(pdfReader))
+    {
+        var strategy = new iText.Kernel.Pdf.Canvas.Parser.Listener.SimpleTextExtractionStrategy();
+        var text = new StringBuilder();
+        for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
+        {
+            var pageContent = iText.Kernel.Pdf.Canvas.Parser.PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+            text.AppendLine(pageContent);
+        }
+
+        return text.ToString().Contains(\"A Simple PDF File\");
+    }
+}`;
+                insertScriptIntoEditor(pdfScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addJsonValueCheck').click(function() {
+                var jsonScript = 
+`var responseContent = await response.Content.ReadAsStringAsync();
+var jsonResponse = Newtonsoft.Json.Linq.JObject.Parse(responseContent);
+return (string)jsonResponse["specificKey"] == "expectedValue";`;
+                insertScriptIntoEditor(jsonScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addImageTextCheck').click(function() {
+                var imageTextCheckScript = 
+`using (var imageStream = await response.Content.ReadAsStreamAsync())
+{
+    var ocrEngine = new Tesseract.TesseractEngine(@@"./tessdata", "eng", Tesseract.EngineMode.Default);
+    var img = Pix.LoadFromStream(imageStream);
+    var page = ocrEngine.Process(img);
+    var text = page.GetText();
+    return text.Contains("expectedTextInImage");
+}`;
+                insertScriptIntoEditor(imageTextCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addZipFileCheck').click(function() {
+                var zipFileCheckScript = 
+`using (var zipStream = await response.Content.ReadAsStreamAsync())
+using (var archive = new System.IO.Compression.ZipArchive(zipStream))
+{
+    return archive.Entries.Any(entry => entry.FullName == "specificFileName.txt");
+}`;
+                insertScriptIntoEditor(zipFileCheckScript);
+                assertionHelpModal.hide();
+            });
+            
+            $('#addResponseTextCheck').click(function() {
+                var responseTextCheckScript = 
+`var responseText = await response.Content.ReadAsStringAsync();
+return responseText.Contains("expectedTextInResponse");`;
+                insertScriptIntoEditor(responseTextCheckScript);
+                assertionHelpModal.hide();
+            });
+</script>
+    

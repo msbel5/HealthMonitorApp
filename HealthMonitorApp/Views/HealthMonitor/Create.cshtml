@@ -116,6 +116,7 @@
     </body>
     
     @await Html.PartialAsync("_AssertionHelpModal")
+    @await Html.PartialAsync("_DynamicStringHelpModal")
     
     @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
@@ -131,6 +132,7 @@
                     language: 'csharp',
                     theme: 'vs-dark',
                     readOnly: false,
+                    lineNumbers: 'on', // Optionally turn off line numbers if you prefer
                     minimap: { enabled: false },
                     automaticLayout: true
                 });
@@ -169,10 +171,14 @@
             });
 
             // Help icon handler
+            var dynamicStringHelpModal = new bootstrap.Modal(document.getElementById('dynamicStringHelpModal'));
+
             $('#helpIcon').click(function () {
-                var message = 'You can add dynamic strings using the following format: \n';
-                message += '${{JavaScript Code}}';
-                alert(message);
+                dynamicStringHelpModal.show();
+            });
+            
+            $(".btn-dynamicString").click(function(){
+                dynamicStringHelpModal.hide();
             });
             
             // Monaco Editor initialization
@@ -188,7 +194,7 @@
             $(".close, .btn-secondary").click(function(){
                 assertionHelpModal.hide();
             });
-            
+                        
             // Handlers for predefined script buttons
             $('#addPdfTextCheck').click(function() {
                 var pdfScript =

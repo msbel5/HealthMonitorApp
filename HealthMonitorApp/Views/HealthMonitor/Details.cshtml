@@ -65,7 +65,7 @@
          <dt class="col-sm-4">API Group</dt>
          <dd class="col-sm-8">@Model.ApiEndpoint.ApiGroup.Name</dd>
          <dt class="col-sm-4">CURL Command</dt>
-         <div class="col-sm-8" style="padding-top: 0; margin-top: -1rem;">
+         <div class="col-sm-8" style="padding-top: 0; margin-top: -1.5rem;">
             <span class="curl-command-inline" id="curl-commands-details-container"></span>
         </div>         @if (Model.AssertionScript != null){
          <dt class="col-sm-4">Assertion Script</dt>
@@ -74,7 +74,7 @@
          </dd>}
          @if (Model.ResponseContent != null){
          <dt class="col-sm-4">Response Content</dt>
-         <dd class="col-sm-8 response-content-container">@Model.ResponseContent</dd>}
+         <dd class="col-sm-8 response-content-container"></dd>}
      </dl>
  </div>
 <div class="text-center">
@@ -96,7 +96,7 @@
                         language: 'csharp',
                         readOnly: true, // Make the editor read-only
                         theme: 'vs-dark',
-                        lineNumbers: 'off', // Optionally turn off line numbers if you prefer
+                        lineNumbers: 'on', // Optionally turn off line numbers if you prefer
                         minimap: { enabled: false } // Disable minimap
                     });
                 });
@@ -104,21 +104,59 @@
 
             // Encode the CURL command to ensure proper handling of special characters
             var encodedCurlCommands = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.ApiEndpoint.cURL))';
-
-            // Split the CURL commands and display them with numbers
             var curlCommands = encodedCurlCommands.split('&&&');
-            if (curlCommands.length > 1) {
-                curlCommands.forEach(function (command, index) {
-                    if (command) { // Check if the command is not an empty string
-                        $('#curl-commands-details-container').append('<p><strong style="color: #1b6ec2">' + (index + 1) + '.</strong> ' + command + '</p>');
+            displayCurlCommands(curlCommands);
+            
+            // Handle Response Content Display
+            var responseContent = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.ResponseContent))';
+            var responseParts = responseContent.split('&&&');
+            displayResponseContent(responseParts);
+            });
+            
+            function displayCurlCommands(curlCommands) {
+            curlCommands.forEach(function(command, index) {
+               var commandDisplay = command ? '<p><strong style="color: #1b6ec2">' + (index + 1) + '.</strong> ' + command + '</p>' : '';
+               $('#curl-commands-details-container').append(commandDisplay);
+            });
+            }
+            
+            function displayResponseContent(responseParts) {
+                responseParts.forEach(function(part, index) {
+                    if (part.trim() !== '') {
+                        var responseContainer = $('<div class="code-display" style="margin-bottom: 10px;"></div>');
+                        var responseNumber = responseParts.length > 1 ? '<strong style="color: #1b6ec2">' + (index + 1) + '.</strong> ' : '';
+                        responseContainer.append(responseNumber);
+                        if (isHTML(part)) {
+                            responseContainer.append($('<iframe>', {
+                                srcdoc: part,
+                                class: 'response-iframe',
+                                frameborder: 0,
+                                width: '100%',
+                                height: '300px'
+                            }));
+                        } else {
+                            responseContainer.append($('<pre>').text(part));
+                        }
+                        $('.response-content-container').append(responseContainer);
                     }
                 });
-            } else {
-                    if (curlCommands[0]) { // Check if the command is not an empty string
-                        $('#curl-commands-details-container').append('<p>' + curlCommands[0] + '</p>');
-                    }
             }
-        });
-    </script>
+    
+            function isHTML(str) {
+                return /<[^>]+>/.test(str);
+            }
+            </script>
+            <style>
+            .response-iframe {
+                width: 100%;
+                border: none;
+                margin-bottom: 10px;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            </style>
+
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

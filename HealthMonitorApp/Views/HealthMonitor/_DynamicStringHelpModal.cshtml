@@ -1,0 +1,87 @@
+<div class="modal" id="dynamicStringHelpModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dynamic String Processor Help</h5>
+                <button type="button" class="btn-close btn-dynamicString" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This tool allows you to include JavaScript code dynamically in your curl commands. Use the format <code>${{JavaScript Code}}</code> within your command.</p>
+                                
+                <!-- Expanded Information -->
+                <h6>How to Use:</h6>
+                <p>Write JavaScript code inside <code>${{ }}</code>. This code is executed while making request so it can be changed every time its called and the output is inserted into your curl command.</p>
+                <h6>Example:</h6>
+                <pre><code>curl http://example.com/data?date=${{new Date().toISOString()}}</code></pre>
+                <p>This replaces <code>${{new Date().toISOString()}}</code> with the current ISO date string.</p>
+
+                <!-- JavaScript Testing Area -->
+                <h6>Test Your JavaScript Code:</h6>
+                <textarea id="js-test-area" class="form-control" rows="3">new Date().toISOString()</textarea>
+                <div class="text-center mt-3"> <!-- Center align button and add margin-top -->
+                    <button id="test-js-btn" class="btn btn-primary">Test Code</button>
+                </div>
+                <pre id="js-test-result" class="test-result mt-3 d-none"></pre> <!-- Hide initially and add margin-top -->
+
+                <!-- Curl Parsing Testing Area -->
+                <h6>Test Your Curl Command:</h6>
+                <textarea id="curl-test-area" class="form-control mt-2" rows="3">curl http://example.com/data?date=${{new Date().toISOString()}}</textarea>
+                <div class="text-center mt-3"> <!-- Center align button and add margin-top -->
+                    <button id="test-curl-btn" class="btn btn-primary">Parse Curl</button>
+                </div>
+                <pre id="curl-test-result" class="test-result mt-3 d-none"></pre> <!-- Hide initially and add margin-top -->
+
+                <h6>Restrictions:</h6>
+                <p>To ensure security and functionality, certain JavaScript methods and objects like <code>eval</code>, <code>window</code>, and <code>document</code> are not allowed.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-dynamicString" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .modal-lg {
+        max-width: 800px; /* Adjust width as needed */
+    }
+
+    .test-result {
+        background-color: #f4f4f4; /* Light gray background for distinction */
+        border: 1px solid #ddd; /* Subtle border */
+        border-radius: 4px; /* Rounded corners */
+        padding: 10px; /* Padding for content */
+        white-space: pre-wrap; /* Ensure line breaks and spaces are respected */
+    }
+</style>
+
+<script type="text/javascript">
+    document.getElementById('test-js-btn').addEventListener('click', function() {
+        var code = document.getElementById('js-test-area').value;
+        var resultElement = document.getElementById('js-test-result');
+        try {
+            var result = eval(code);
+            resultElement.innerText = result;
+            resultElement.classList.remove('d-none'); // Show result area
+        } catch (error) {
+            resultElement.innerText = 'Error: ' + error.message;
+            resultElement.classList.remove('d-none'); // Show result area
+        }
+    });
+    
+    document.getElementById('test-curl-btn').addEventListener('click', function() {
+        var curlCommand = document.getElementById('curl-test-area').value;
+        var resultElement = document.getElementById('curl-test-result');
+        try {
+            var processedCommand = curlCommand.replace(/\$\{\{(.*?)\}\}/g, function(_, jsCode) {
+                return eval(jsCode);
+            });
+            resultElement.innerText = processedCommand;
+            resultElement.classList.remove('d-none'); // Show result area
+        } catch (error) {
+            resultElement.innerText = 'Error: ' + error.message;
+            resultElement.classList.remove('d-none'); // Show result area
+        }
+    });
+</script>
