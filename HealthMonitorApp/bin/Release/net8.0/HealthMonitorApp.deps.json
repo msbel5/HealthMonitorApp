@@ -9,6 +9,7 @@
       "HealthMonitorApp/1.0.0": {
         "dependencies": {
           "Emgu.CV": "4.8.1.5350",
+          "Facebook": "7.0.6",
           "HtmlAgilityPack": "1.11.54",
           "Jint": "2.11.58",
           "Microsoft.CodeAnalysis.CSharp": "4.8.0",
@@ -46,6 +47,14 @@
           "lib/netstandard2.0/Emgu.CV.dll": {
             "assemblyVersion": "4.8.1.5350",
             "fileVersion": "4.8.1.5350"
+          }
+        }
+      },
+      "Facebook/7.0.6": {
+        "runtime": {
+          "lib/net45/Facebook.dll": {
+            "assemblyVersion": "6.0.10.0",
+            "fileVersion": "7.0.6.0"
           }
         }
       },
@@ -1251,6 +1260,13 @@
       "sha512": "sha512-1jOw9vu3z6uPEF3Z6ubDIYSrIYrv0h+ABINypNKEtKixMKU0ckUFsiX1AKXFE+kBz9vVFKXRVl94B1Mrf23tVA==",
       "path": "emgu.cv/4.8.1.5350",
       "hashPath": "emgu.cv.4.8.1.5350.nupkg.sha512"
+    },
+    "Facebook/7.0.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-D9nlWZb88S4U+eh1pUDQ+AkSkiht6m0eFpxKFddZnQSSFTnncvDMBEnNODy4fOIOjWQIiOXRVbuY04jCPyWqkw==",
+      "path": "facebook/7.0.6",
+      "hashPath": "facebook.7.0.6.nupkg.sha512"
     },
     "HtmlAgilityPack/1.11.54": {
       "type": "package",

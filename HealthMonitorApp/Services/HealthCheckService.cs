@@ -1,13 +1,10 @@
 using System.Diagnostics;
 using System.Net;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.CSharp.RuntimeBinder;
+
 
 
 namespace HealthMonitorApp.Services
@@ -17,13 +14,15 @@ namespace HealthMonitorApp.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<HealthCheckService> _logger;
         private readonly AssertionService _assertionService;
+        private readonly WarningService _warningService;
         private const string Delimiter = "&&&";  // Delimiter for separating multiple cURL commands
 
-        public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger, AssertionService assertionService)
+        public HealthCheckService(ApplicationDbContext context, ILogger<HealthCheckService> logger, AssertionService assertionService, WarningService warningService)
         {
             _context = context;
             _logger = logger;
             _assertionService = assertionService;
+            _warningService = warningService;
         }
         
 
@@ -126,6 +125,35 @@ namespace HealthMonitorApp.Services
 
             _context.ServiceStatusHistories.Add(history);
             await _context.SaveChangesAsync();
+            
+            if (!serviceStatus.IsHealthy)
+            {
+                StringBuilder emailBodyBuilder = new StringBuilder();
+                emailBodyBuilder.AppendLine($"The following service failed the health check: {serviceStatus.ApiEndpoint.Name}");
+                emailBodyBuilder.AppendLine($"Response content: {serviceStatus.ResponseContent}");
+                String emailBody = emailBodyBuilder.ToString();
+                
+                await _warningService.SendEmailViaExchangeAsync(
+                    "df.mesut.erdogmus@a101.com.tr",
+                    "Sos Health Check Failure",
+                    emailBody
+                );
+                await _warningService.SendEmailViaExchangeAsync(
+                    "mesut.erdogmus@testinium.com",
+                    "Sos Health Check Failure",
+                    emailBody
+                );                
+                await _warningService.SendEmailViaExchangeAsync(
+                    "df.muhammed.sıddık.bel@a101.com.tr",
+                    "Sos Health Check Failure",
+                    emailBody
+                );
+                await _warningService.SendEmailViaExchangeAsync(
+                    "muhammet.bel@testinium.com",
+                    "Sos Health Check Failure",
+                    emailBody
+                );
+            }
         }
 
         private bool IsCurlCommand(string command)

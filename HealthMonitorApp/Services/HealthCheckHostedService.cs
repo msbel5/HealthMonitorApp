@@ -70,13 +70,24 @@ namespace HealthMonitorApp.Services
             {
                 string emailBody = "The following services failed the health check: " +
                                    string.Join(", ", failedServices);
-
-                var emailService = new EmailService();
-                await emailService.SendEmailAsync(
+                
+                var warningService = new WarningService(new Logger<WarningService>(new LoggerFactory()));
+                await warningService.SendEmailAsync(
                     "msbel5@gmail.com",
                     "Health Check Failure",
                     emailBody,
                     "<strong>" + emailBody + "</strong>"  // Example of converting plain text email body to HTML
+                );
+                
+                await warningService.SendWhatsAppMessageAsync(
+                    "905555555555",
+                    emailBody
+                );
+                
+                await warningService.SendEmailViaExchangeAsync(
+                    "df.muhammed.sıddık.bel@a101.com.tr",
+                    "Sos Health Check Failure",
+                    emailBody
                 );
             }
             await _hubContext.Clients.All.SendAsync("RefreshPage");

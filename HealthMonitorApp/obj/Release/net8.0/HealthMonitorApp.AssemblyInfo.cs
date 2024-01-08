@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HealthMonitorApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0726b24445f11a8cebf0ebf3dd1f1540abc66fe4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+245381727106bb8670d0a44848115c62339bfab6")]
 [assembly: System.Reflection.AssemblyProductAttribute("HealthMonitorApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HealthMonitorApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

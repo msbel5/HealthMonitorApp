@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
@@ -17,12 +19,14 @@ public class HealthMonitorController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly HealthCheckService _healthCheckService;
+    private readonly AssertionService _assertionService;
     private readonly ILogger<HealthMonitorController> _logger;
 
-    public HealthMonitorController(ApplicationDbContext context, HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
+    public HealthMonitorController(ApplicationDbContext context,AssertionService _assertionService, HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
     {
         _context = context;
         _healthCheckService = healthCheckService;
+        _assertionService = _assertionService;
         _logger = logger;
     }
 
@@ -148,9 +152,16 @@ public class HealthMonitorController : Controller
                 {
                     Name = model.ServiceName,
                 };
+                
 
                 if (!string.IsNullOrWhiteSpace(model.AssertionScript))
                 {
+                    HttpResponseMessage mockResponse = new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = new StringContent("Mock response"),
+                                    
+                    };
                     // Verify the Assertion Script
                     var scriptCheckResult = CheckCompilation(model.AssertionScript);
                     if (!scriptCheckResult.Success)
