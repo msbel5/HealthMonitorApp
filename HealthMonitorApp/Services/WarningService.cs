@@ -45,14 +45,14 @@ namespace HealthMonitorApp.Services
         
         public async Task SendWhatsAppMessageAsync(string toWhatsAppNumber, string message)
         {
-            var apiUrl = "https://graph.facebook.com/v13.0/yourApiUrl/messages"; // Replace with your API URL
+            var apiUrl = "https://graph.facebook.com/v13.0/0539123125/messages"; // Replace with your API URL
             var accessToken = "yourAccessToken"; // Replace with your access token
 
             using var client = new HttpClient();
             var payload = new
             {
                 messaging_product = "whatsapp",
-                to = toWhatsAppNumber,
+                to = 90556510250,
                 type = "text",
                 text = new { body = message }
             };
