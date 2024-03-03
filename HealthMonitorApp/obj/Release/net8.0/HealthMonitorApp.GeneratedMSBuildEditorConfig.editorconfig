@@ -46,6 +46,30 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQXBpRW5kcG9pbnQvX0RlbGV0ZUNvbmZpcm1hdGlvbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/AnalysisResult.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvQW5hbHlzaXNSZXN1bHQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvRWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/Analysis/_DeleteConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQW5hbHlzaXMvX0RlbGV0ZUNvbmZpcm1hdGlvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/Views/ApiGroup/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXBpR3JvdXAvQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 

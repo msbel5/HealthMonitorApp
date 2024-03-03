@@ -1,46 +1,70 @@
 using HealthMonitorApp.Models;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Services;
 
 namespace HealthMonitorApp.Data
 {
-    public class DataSeeder
+    public class DataSeeder(
+        ApplicationDbContext context,
+        ILogger<DataSeeder> logger,
+        HealthCheckService healthCheckService,
+        RepositoryService repositoryService)
     {
-        private readonly ApplicationDbContext _context;
-        private readonly ILogger<DataSeeder> _logger;
-        private readonly HealthCheckService _healthCheckService;
-
-        public DataSeeder(ApplicationDbContext context, ILogger<DataSeeder> logger, HealthCheckService healthCheckService)
-        {
-            _context = context;
-            _logger = logger;
-            _healthCheckService = healthCheckService;
-        }
-
         public async Task SeedData()
         {
-            if (!_context.ServiceStatuses.Any())
+            if (!context.ServiceStatuses.Any())
             {
-                await SeedDataFromCurlCommands();
+                 SeedOnDeploy();
             }
+        }
+        
+        
+        public async Task SeedDataFromRepository(RepositoryAnalysis repositoryAnalysis)
+        {
+            
+            var repository = repositoryAnalysis;
+            var repositoryName = repository.Name;
+            var repositoryUrl = repository.Url;
+            var repositoryBranch = repository.Branch;
+            var repositoryUsername = repository.DecryptCredentials().Username;
+            var repositoryPassword = repository.DecryptCredentials().Password;
+            var repositoryBaseUrl = repository.BaseUrl;
+            var repositoryPath = repository.Path;
+
+            if (string.IsNullOrWhiteSpace(repositoryName) || string.IsNullOrWhiteSpace(repositoryUrl) ||
+                string.IsNullOrWhiteSpace(repositoryBranch))
+            {
+                logger.LogError("Repository name, URL, and branch are required to seed data");
+                return;
+            }
+            
+            var repositoryData = await repositoryService.GetRepositoryAnalysisByUrlAsync(repository.Url);
+
+            if (repositoryData == null)
+            {
+                logger.LogError("Failed to retrieve repository data");
+                return;
+            }
+            
+            var apiMapping = await repositoryService.GetApiMappingFromRepositoryAsync(repositoryData);
+
+            var endpointJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryData);
         }
 
 
 
-        private void InitializeDataFromKarateFile()
+        private async void SeedOnDeploy()
         {
-            if (_context.ServiceStatuses.Any()) return;
-            SeedDataFromCurlCommands();
+            if (context.ServiceStatuses.Any()) return;
+            await SeedDataFromCurlCommands();
             // 1. Create and add ApiGroups
             var googleGroup = new ApiGroup { Name = "Search Engines" };
-            _context.ApiGroups.AddRange(googleGroup);
+            context.ApiGroups.AddRange(googleGroup);
 
 
             // Save changes to ensure ApiGroups are added first
-            _context.SaveChanges();
+            await context.SaveChangesAsync();
 
             // 3. Create and add ServiceStatuses with associated ApiEndpoints
             var googleStatus = new ServiceStatus
@@ -57,8 +81,8 @@ namespace HealthMonitorApp.Data
                 }
             };
 
-            _context.ServiceStatuses.AddRange(googleStatus);
-            _context.SaveChanges();
+            context.ServiceStatuses.AddRange(googleStatus);
+            await context.SaveChangesAsync();
 
         }
 
@@ -69,7 +93,7 @@ namespace HealthMonitorApp.Data
 
             if (!File.Exists(filePath))
             {
-                _logger.LogError($"The file {filePath} does not exist.");
+                logger.LogError($"The file {filePath} does not exist.");
                 return;
             }
 
@@ -100,95 +124,89 @@ namespace HealthMonitorApp.Data
 
             foreach (var curlCommand in curlCommands)
             {
-                _logger.LogInformation($"Processing cURL command: {curlCommand}");
+                logger.LogInformation($"Processing cURL command: {curlCommand}");
 
-                using (var transaction = await _context.Database.BeginTransactionAsync())
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
                 {
-                    try
+                    var match = Regex.Match(curlCommand, @"https?://[^/]+/(.*?)(?:\s|'|""|$)");
+
+                    if (!match.Success || match.Groups.Count <= 1)
                     {
-                        var match = Regex.Match(curlCommand, @"https?://[^/]+/(.*?)(?:\s|'|""|$)");
-
-                        if (!match.Success || match.Groups.Count <= 1)
-                        {
-                            _logger.LogWarning("Failed to extract URL from cURL command");
-                            continue;
-                        }
-
-                        var urlPath = match.Groups[1].Value;
-                        var pathSegments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-
-                        if (pathSegments.Length < 2)
-                        {
-                            _logger.LogWarning("Failed to extract API group name and API name from URL");
-                            continue;
-                        }
-
-                        string apiGroupName;
-                        string apiName;
-
-                        if (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) ||
-                            pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase))
-                        {
-                            apiGroupName = pathSegments.Length > 1 ? pathSegments[1] : "UnknownGroup";
-                            apiName = pathSegments.Length > 2 ? pathSegments[2] : "UnknownApi";
-                        }
-                        else
-                        {
-                            apiGroupName = pathSegments[0];
-                            apiName = pathSegments[1];
-                        }
-
-                        var apiGroup = _context.ApiGroups.FirstOrDefault(ag => ag.Name == apiGroupName) ?? new ApiGroup { Name = apiGroupName };
-
-                        if (apiGroup.ID == 0)
-                        {
-                            _context.ApiGroups.Add(apiGroup);
-                            await _context.SaveChangesAsync();
-                        }
-
-                        var serviceStatus = new ServiceStatus
-                        {
-                            Name = $"{apiGroupName} - {apiName}",
-                            IsHealthy = true,
-                            CheckedAt = DateTime.UtcNow,
-                            ResponseTime = 0
-                        };
-
-                        _context.ServiceStatuses.Add(serviceStatus);
-                        await _context.SaveChangesAsync();
-
-                        var apiEndpoint = new ApiEndpoint
-                        {
-                            Name = apiName,
-                            cURL = curlCommand,
-                            ExpectedStatusCode = 200,
-                            ApiGroupID = apiGroup.ID,
-                            ServiceStatusID = serviceStatus.ID
-                        };
-
-                        _context.ApiEndpoints.Add(apiEndpoint);
-                        await _context.SaveChangesAsync();
-                        ServiceStatus apiServiceStatus = apiEndpoint.ServiceStatus;
-                        await _healthCheckService.CheckServiceStatusHealthAsync(apiServiceStatus);
-                        await transaction.CommitAsync();
-
-                        _logger.LogInformation($"Successfully processed cURL command: {curlCommand}");
+                        logger.LogWarning("Failed to extract URL from cURL command");
+                        continue;
                     }
-                    catch (Exception ex)
+
+                    var urlPath = match.Groups[1].Value;
+                    var pathSegments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                    if (pathSegments.Length < 2)
                     {
-                        _logger.LogError($"Error processing cURL command: {ex.Message}");
-                        await transaction.RollbackAsync();
+                        logger.LogWarning("Failed to extract API group name and API name from URL");
+                        continue;
                     }
+
+                    string apiGroupName;
+                    string apiName;
+
+                    if (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) ||
+                        pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase))
+                    {
+                        apiGroupName = pathSegments.Length > 1 ? pathSegments[1] : "UnknownGroup";
+                        apiName = pathSegments.Length > 2 ? pathSegments[2] : "UnknownApi";
+                    }
+                    else
+                    {
+                        apiGroupName = pathSegments[0];
+                        apiName = pathSegments[1];
+                    }
+
+                    var apiGroup = context.ApiGroups.FirstOrDefault(ag => ag.Name == apiGroupName) ??
+                                   new ApiGroup { Name = apiGroupName };
+
+                    if (apiGroup.ID == 0)
+                    {
+                        context.ApiGroups.Add(apiGroup);
+                        await context.SaveChangesAsync();
+                    }
+
+                    var serviceStatus = new ServiceStatus
+                    {
+                        Name = $"{apiGroupName} - {apiName}",
+                        IsHealthy = true,
+                        CheckedAt = DateTime.UtcNow,
+                        ResponseTime = 0
+                    };
+
+                    context.ServiceStatuses.Add(serviceStatus);
+                    await context.SaveChangesAsync();
+
+                    var apiEndpoint = new ApiEndpoint
+                    {
+                        Name = apiName,
+                        cURL = curlCommand,
+                        ExpectedStatusCode = 200,
+                        ApiGroupID = apiGroup.ID,
+                        ServiceStatusID = serviceStatus.ID
+                    };
+
+                    context.ApiEndpoints.Add(apiEndpoint);
+                    await context.SaveChangesAsync();
+                    ServiceStatus apiServiceStatus = apiEndpoint.ServiceStatus;
+                    await healthCheckService.CheckServiceStatusHealthAsync(apiServiceStatus);
+                    await transaction.CommitAsync();
+
+                    logger.LogInformation($"Successfully processed cURL command: {curlCommand}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Error processing cURL command: {ex.Message}");
+                    await transaction.RollbackAsync();
                 }
             }
 
-            _logger.LogInformation("Completed processing all cURL commands");
+            logger.LogInformation("Completed processing all cURL commands");
         }
 
-
-
-
     }
-
-
 }

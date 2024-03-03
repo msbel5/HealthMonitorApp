@@ -14,4 +14,9 @@ public class ApiEndpoint
     public ApiGroup ApiGroup { get; set; }
     public int ServiceStatusID { get; set; }
     public ServiceStatus ServiceStatus { get; set; }
+    
+    public bool? IsAuthorized { get; set; }
+    
+    public bool? IsOpen { get; set; }
+    public string? Annotations { get; set; }
 }

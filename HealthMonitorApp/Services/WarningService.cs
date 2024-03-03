@@ -46,7 +46,7 @@ namespace HealthMonitorApp.Services
         public async Task SendWhatsAppMessageAsync(string toWhatsAppNumber, string message)
         {
             var apiUrl = "https://graph.facebook.com/v13.0/0539123125/messages"; // Replace with your API URL
-            var accessToken = "yourAccessToken"; // Replace with your access token
+            var accessToken = "EAAKvFJLBgmABO9B5ZCUP44UvhgvYUwkHVQCPUoSoCjAS2yAbJL0FgrCLKNBYYDvZACZCrzyGwjXlFr9SnHfH2717DZChYIXXFfDOqdkVGzZAVeDe0czZA9ZB3u3nfBCZCeiPfuimJJLC1dUnHIQgd5dVinJg67Ion2UvDBeUSBS9gsk1pcRNDgC6ybw4TyDJZCxaiLsIYbGwQRm4ZCENJ4qFp2u5BjSK9oievz8stNEKadDgZDZD"; // Replace with your access token
 
             using var client = new HttpClient();
             var payload = new

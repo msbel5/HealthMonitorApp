@@ -22,11 +22,11 @@ public class HealthMonitorController : Controller
     private readonly AssertionService _assertionService;
     private readonly ILogger<HealthMonitorController> _logger;
 
-    public HealthMonitorController(ApplicationDbContext context,AssertionService _assertionService, HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
+    public HealthMonitorController(ApplicationDbContext context,AssertionService assertionService, HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
     {
         _context = context;
         _healthCheckService = healthCheckService;
-        _assertionService = _assertionService;
+        _assertionService = assertionService;
         _logger = logger;
     }
 

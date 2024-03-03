@@ -132,12 +132,13 @@ namespace HealthMonitorApp.Services
                 emailBodyBuilder.AppendLine($"The following service failed the health check: {serviceStatus.ApiEndpoint.Name}");
                 emailBodyBuilder.AppendLine($"Response content: {serviceStatus.ResponseContent}");
                 String emailBody = emailBodyBuilder.ToString();
-                
+                /*
                 await _warningService.SendEmailViaExchangeAsync(
                     "df.mesut.erdogmus@a101.com.tr",
                     "Sos Health Check Failure",
                     emailBody
                 );
+            
                 await _warningService.SendEmailViaExchangeAsync(
                     "mesut.erdogmus@testinium.com",
                     "Sos Health Check Failure",
@@ -153,6 +154,7 @@ namespace HealthMonitorApp.Services
                     "Sos Health Check Failure",
                     emailBody
                 );
+                */
             }
         }
 

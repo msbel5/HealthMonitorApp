@@ -5,6 +5,8 @@ using HealthMonitorApp.Data;  // Add this if DataSeeder is in a different namesp
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using HealthMonitorApp.Tools;
+using HealthMonitorApp.Tools.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,9 +17,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<HealthCheckService>();
 builder.Services.AddScoped<AssertionService>();
 builder.Services.AddScoped<WarningService>();
+builder.Services.AddTransient<RepositoryService>();
+builder.Services.AddScoped<ReportHandler>();
 builder.Services.AddTransient<DataSeeder>();  // Register DataSeeder as a service
 builder.Services.AddHostedService<HealthCheckHostedService>();
 builder.Services.AddSignalR();
+
+// Register the VCS and CodeCheck services
+builder.Services.AddTransient<GitVcsProvider>(); // Assuming GitVcsProvider doesn't require interfaces to be registered
+builder.Services.AddTransient<VcsService>();
+builder.Services.AddTransient<ApplicationInspectorService>(); // Singleton to ensure one instance handles the installation check
+
+
 
 var app = builder.Build();
 
@@ -53,13 +64,17 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.EnsureCreated();
+        // Ensure ApplicationInspector is installed
+        var appInspectorService = services.GetRequiredService<ApplicationInspectorService>();
+        appInspectorService.EnsureInstalledAsync().GetAwaiter().GetResult();
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred creating the DB.");
+        logger.LogError(ex, "An error occurred during application startup.");
     }
 }
+
 
 // Seed data on application startup
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();

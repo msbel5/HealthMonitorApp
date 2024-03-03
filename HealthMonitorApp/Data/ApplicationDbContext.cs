@@ -13,6 +13,7 @@ namespace HealthMonitorApp.Data
         public DbSet<ApiEndpoint> ApiEndpoints { get; set; }
         public DbSet<ServiceStatus> ServiceStatuses { get; set; }
         public DbSet<ServiceStatusHistory> ServiceStatusHistories { get; set; }
+        public DbSet<RepositoryAnalysis?> RepositoryAnalyses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,6 +38,14 @@ namespace HealthMonitorApp.Data
                 .HasOne(ae => ae.ApiGroup)
                 .WithMany(ag => ag.ApiEndpoints)
                 .HasForeignKey(ae => ae.ApiGroupID)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            // RepositoryAnalysis to ApiGroups (One-to-Many)
+            
+            modelBuilder.Entity<ApiGroup>()
+                .HasOne(ag => ag.RepositoryAnalysis)
+                .WithMany(ra => ra.ApiGroups)
+                .HasForeignKey(ag => ag.RepositoryAnalysisId)
                 .OnDelete(DeleteBehavior.SetNull);
         }
 

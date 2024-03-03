@@ -12,6 +12,7 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+      <Content Remove="Repos\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,6 +35,79 @@
       <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
       <PackageReference Include="Tesseract" Version="5.2.0" />
 
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Repos\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Repos\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Repos\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\web.config" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\global.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\appsettings.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\appsettings.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\HealthMonitorApp.deps.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\HealthMonitorApp.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\HealthMonitorApp.staticwebassets.runtime.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\package-lock.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Debug\net8.0\package.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\appsettings.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\HealthMonitorApp.deps.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\HealthMonitorApp.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\HealthMonitorApp.staticwebassets.runtime.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\package-lock.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\package.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\appsettings.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\HealthMonitorApp.deps.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\HealthMonitorApp.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\package-lock.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\bin\Release\net8.0\publish\package.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Debug\net8.0\staticwebassets.build.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Debug\net8.0\staticwebassets.development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Debug\net8.0\staticwebassets.pack.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\HealthMonitorApp.csproj.nuget.dgspec.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\project.assets.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\project.packagespec.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Release\net8.0\HealthMonitorApp.deps.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Release\net8.0\staticwebassets.build.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Release\net8.0\staticwebassets.development.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Release\net8.0\staticwebassets.pack.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\obj\Release\net8.0\staticwebassets.publish.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\package-lock.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\package.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Properties\launchSettings.json" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Pages\ApiEndpoint\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Pages\ApiEndpoint\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Pages\ApiEndpoint\Edit.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Pages\ApiEndpoint\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Pages\ApiEndpoint\_DeleteConfirmation.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\ApiGroup\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\ApiGroup\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\ApiGroup\Edit.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\ApiGroup\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\ApiGroup\_DeleteConfirmation.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\HealthMonitor\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\HealthMonitor\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\HealthMonitor\Edit.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\HealthMonitor\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\HealthMonitor\_DeleteConfirmation.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\Shared\Error.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\Shared\_Layout.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\Shared\_ValidationScriptsPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\_ViewImports.cshtml" />
+      <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\_ViewStart.cshtml" />
     </ItemGroup>
 
 </Project>
