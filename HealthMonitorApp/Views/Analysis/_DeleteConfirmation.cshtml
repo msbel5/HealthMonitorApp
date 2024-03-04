@@ -1,0 +1,24 @@
+@model RepositoryAnalysis
+
+<div class="modal-header">
+    <h5 class="modal-title">Delete Confirmation</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <p>Are you sure you want to delete the Repository: @Model.Name?</p>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+        <input type="submit" value="Delete" class="btn btn-danger" />
+    </form>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".close, .btn-secondary").click(function(){
+            $('#deleteModal').modal('hide');
+        });
+    });
+</script>
+

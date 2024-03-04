@@ -1,0 +1,65 @@
+@model HealthMonitorApp.ViewModels.RepositoryCreateViewModel
+
+<form asp-action="Create" style="max-width: 500px; margin: auto;">
+    <div class="form-group">
+        <label for="Name">Name</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="Url">URL</label>
+        <input asp-for="Url" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="Branch">Branch</label>
+        <input asp-for="Branch" class="form-control" />
+    </div>
+
+    <!-- Checkbox for API Base URL -->
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="hasBaseUrlCheckbox">
+        <label class="form-check-label" for="hasBaseUrlCheckbox">
+            Has Base URL?
+        </label>
+    </div>
+    <div class="form-group d-none" id="BaseUrlGroup">
+        <label for="BaseUrl">Base Url</label>
+        <input asp-for="BaseUrl" class="form-control" />
+        <!-- Checkbox for endpoint integration -->
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="IntegrateEndpoints">
+            <label class="form-check-label" for="IntegrateEndpoints">
+                Integrate EndPoints?
+            </label>
+        </div>
+    </div>
+
+    <!-- Checkbox for Credentials -->
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="hasCredentialsCheckbox">
+        <label class="form-check-label" for="hasCredentialsCheckbox">
+            Has Credentials?
+        </label>
+    </div>
+    <div class="form-group d-none" id="UsernameGroup">
+        <label for="Username">Username</label>
+        <input asp-for="Username" class="form-control" />
+    </div>
+    <div class="form-group d-none" id="PasswordGroup">
+        <label for="Password">Password</label>
+        <input asp-for="Password" class="form-control" type="password" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Submit</button>
+</form>
+
+<script>
+document.getElementById('hasCredentialsCheckbox').addEventListener('change', function() {
+    var isChecked = this.checked;
+    document.getElementById('UsernameGroup').classList.toggle('d-none', !isChecked);
+    document.getElementById('PasswordGroup').classList.toggle('d-none', !isChecked);
+});
+
+document.getElementById('hasBaseUrlCheckbox').addEventListener('change', function() {
+    var isChecked = this.checked;
+    document.getElementById('BaseUrlGroup').classList.toggle('d-none', !isChecked);
+});
+</script>

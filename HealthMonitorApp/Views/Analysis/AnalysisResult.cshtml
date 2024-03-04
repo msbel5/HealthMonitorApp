@@ -1,0 +1,14 @@
+@model HealthMonitorApp.Models.RepositoryAnalysis
+
+@{
+    ViewData["Title"] = "Analysis Result";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<!-- Display analysis results here -->
+<div>
+    <p>Total Controllers: @Model.NumberOfControllers</p>
+    <p>Total Endpoints: @Model.NumberOfEndpoints</p>
+    <p>Total Public Endpoints: @Model.NumberOfPublicEndpoints</p>
+</div>

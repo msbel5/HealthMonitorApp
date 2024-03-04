@@ -1,0 +1,281 @@
+@model List<RepositoryAnalysis>
+
+@{
+    ViewBag.Title = "Repository Analysis";
+    Layout = "_Layout";
+}
+<div>
+    <h2 style="margin-bottom: -3rem" class="centered-title">@ViewData["Title" ]</h2>
+</div>
+<div class="buttons-container mb-3">
+    <a href="@Url.Action("CheckAllRepositories", "Analysis")" class="btn btn-primary align-left" style="top: 50%">Check All Repositories</a>
+    <div class="invisible-button"></div>
+    <a href="@Url.Action("Create", "Analysis")" class="btn btn-primary align-right align-middle" >Add New Repository</a>
+</div>
+
+@if (Model.Any())
+{
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th class="text-center">URL</th>
+        <th>Branch</th>
+        <th>Number of Controllers</th>
+        <th>Number of Endpoints</th>
+        <th>Number of Public Endpoints</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var repository in Model)
+    {
+    <tr>
+        <td>@repository.Name</td>
+        <td>@repository.Url</td>
+        <td>@repository.Branch</td>
+        <td class="text-center">@repository.NumberOfControllers</td>
+        <td class="text-center">@repository.NumberOfEndpoints</td>
+        <td class="text-center">@repository.NumberOfPublicEndpoints</td>
+        <td class="text-center">
+            <a asp-action="Details" asp-route-id="@repository.Id"><i class="fas fa-info-circle"></i></a>
+            <a asp-action="Edit" asp-route-id="@repository.Id"><i class="fas fa-edit"></i></a>
+            <a href="#" data-id="@repository.Id" class="delete-link"><i class="fas fa-trash-alt"></i></a>
+        </td>
+    </tr>
+    }
+    </tbody>
+</table>
+}
+else
+{
+<p>No repositories have been added yet.</p>
+}
+
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <!-- Content will be loaded here from the partial view -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Add the styles for the new design -->
+<style>
+    .icon-green { color: green; }
+    .icon-gold { color: gold; }
+    .icon-red { color: red; }
+    .title-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .buttons-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+        padding-top: 20px;
+    }
+
+    .invisible-button {
+        flex: 1;
+    }
+
+    .align-left, .align-right, .align-center {
+        flex: 1;
+        text-align: center;
+    }
+
+    .centered-title {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 1.5rem;
+    }
+
+    .services-container-circle {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .service-circle-item {
+        flex: 0 0 calc(10% - 20px);
+        max-width: calc(10% - 20px);
+        margin: 10px; /* Explicitly set the margin */
+        text-align: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 150px; /* Adjust based on your needs */
+    }
+
+    .circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        position: relative;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-weight: bold;
+    }
+
+    .circle-service-name {
+        margin-top: 10px;
+    }
+
+    .circle-service-actions {
+        margin-top: 5px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .circle-service-actions a {
+        margin: 0 5px;
+        color: inherit;
+        transition: color 0.3s;
+    }
+
+    .circle-service-actions a:hover {
+        color: #007bff;
+    }
+
+    .green {
+        background-color: green;
+        align-self: auto;
+    }
+
+    .yellow {
+        background-color: yellow;
+        align-self: auto;
+    }
+
+    .red {
+        background-color: red;
+        align-self: auto;
+    }
+
+    .service-name {
+        margin-top: 10px;
+    }
+
+    .service-actions {
+        margin-top: 5px;
+    }
+
+    .service-actions a {
+        margin: 0 5px;
+        color: inherit;
+        transition: color 0.3s;
+    }
+
+    .service-actions a:hover {
+        color: #007bff;
+    }
+
+    td.response-time {
+        font-weight: bold;
+    }
+
+    .response-green {
+        color: green;
+    }
+
+    .response-yellow {
+        color: gold;
+    }
+
+    .response-red {
+        color: red;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 30px;
+        height: 15px;
+        margin: 5px auto;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 15px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 13px;
+        width: 13px;
+        left: 1px;
+        bottom: 1px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(16px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+    .icon-large {
+        font-size: 1.5em; /* Adjust this value to make the icon larger or smaller */
+    }
+
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        connection.on("RefreshPage", function() {
+            location.reload();
+        });
+
+        $(document).ready(function() {
+            $(".delete-link").click(function() {
+                var id = $(this).data("id");
+                $.get("/Analysis/Delete/" + id, function(data) {
+                    $("#deleteModal .modal-content").html(data);
+                    $("#deleteModal").modal("show");
+                });
+            });
+        });
+    });
+</script>
+

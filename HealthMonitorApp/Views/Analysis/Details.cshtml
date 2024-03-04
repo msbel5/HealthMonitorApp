@@ -1,0 +1,59 @@
+@using System.Web
+@model HealthMonitorApp.Models.RepositoryAnalysis
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository Analysis Details</title>
+</head>
+
+
+<body>
+
+<<div class="container mt-5">
+    <h2 class="text-center">Repository Details</h2>
+
+    <dl class="row">
+        <dt class="col-sm-4">Repository Name</dt>
+        <dd class="col-sm-8">@Model.Name</dd>
+
+        <dt class="col-sm-4">Repository Url</dt>
+        <dd class="col-sm-8">@Model.Url</dd>
+        
+        <dt class="col-sm-4">Number Of Controllers</dt>
+        <dd class="col-sm-8">@Model.NumberOfControllers</dd>
+        
+        <dt class="col-sm-4">Number Of Endpoints</dt>
+        <dd class="col-sm-8">@Model.NumberOfEndpoints</dd>
+        
+        <dt class="col-sm-4">Number Of Public Endpoints</dt>
+        <dd class="col-sm-8">@Model.NumberOfPublicEndpoints</dd>
+        
+        <dt class="col-sm-4">Repository Path</dt>
+        <dd class="col-sm-8">@Model.Path</dd>
+        
+        <dt class="col-sm-4">Repository Branch</dt>
+        <dd class="col-sm-8">@Model.Branch</dd>
+        
+        <dt class="col-sm-4">Repository Api Url</dt>
+        <dd class="col-sm-8">@Model.BaseUrl</dd>
+        
+    </dl>
+
+    <!-- Iframe to display the HTML report -->
+    <div class="report-container" style="width:100%; height:600px;">
+        <iframe src="@Url.Action("GetReport", "Analysis", new { id = Model.Id })" style="width:100%; height:100%;" frameborder="0"></iframe>
+    </div>
+
+</div>
+<div class="text-center">
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
+</body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+    });
+</script>
