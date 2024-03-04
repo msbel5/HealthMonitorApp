@@ -225,3 +225,4 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/ref/HealthMonitorApp.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Facebook.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.sourcelink.json
