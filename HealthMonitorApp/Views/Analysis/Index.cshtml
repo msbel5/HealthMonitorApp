@@ -5,51 +5,57 @@
     Layout = "_Layout";
 }
 <div>
-    <h2 style="margin-bottom: -3rem" class="centered-title">@ViewData["Title" ]</h2>
+    <h2 style="margin-bottom: -3rem" class="centered-title">@ViewData["Title"]</h2>
 </div>
 <div class="buttons-container mb-3">
     <a href="@Url.Action("CheckAllRepositories", "Analysis")" class="btn btn-primary align-left" style="top: 50%">Check All Repositories</a>
     <div class="invisible-button"></div>
-    <a href="@Url.Action("Create", "Analysis")" class="btn btn-primary align-right align-middle" >Add New Repository</a>
+    <a href="@Url.Action("Create", "Analysis")" class="btn btn-primary align-right align-middle">Add New Repository</a>
 </div>
 
 @if (Model.Any())
 {
-<table class="table">
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th class="text-center">URL</th>
-        <th>Branch</th>
-        <th>Number of Controllers</th>
-        <th>Number of Endpoints</th>
-        <th>Number of Public Endpoints</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var repository in Model)
-    {
-    <tr>
-        <td>@repository.Name</td>
-        <td>@repository.Url</td>
-        <td>@repository.Branch</td>
-        <td class="text-center">@repository.NumberOfControllers</td>
-        <td class="text-center">@repository.NumberOfEndpoints</td>
-        <td class="text-center">@repository.NumberOfPublicEndpoints</td>
-        <td class="text-center">
-            <a asp-action="Details" asp-route-id="@repository.Id"><i class="fas fa-info-circle"></i></a>
-            <a asp-action="Edit" asp-route-id="@repository.Id"><i class="fas fa-edit"></i></a>
-            <a href="#" data-id="@repository.Id" class="delete-link"><i class="fas fa-trash-alt"></i></a>
-        </td>
-    </tr>
-    }
-    </tbody>
-</table>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th class="text-center">URL</th>
+            <th>Branch</th>
+            <th>Number of Controllers</th>
+            <th>Number of Endpoints</th>
+            <th>Number of Public Endpoints</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var repository in Model)
+        {
+            <tr>
+                <td>@repository.Name</td>
+                <td>@repository.Url</td>
+                <td>@repository.Branch</td>
+                <td class="text-center">@repository.NumberOfControllers</td>
+                <td class="text-center">@repository.NumberOfEndpoints</td>
+                <td class="text-center">@repository.NumberOfPublicEndpoints</td>
+                <td class="text-center">
+                    <a asp-action="Details" asp-route-id="@repository.Id">
+                        <i class="fas fa-info-circle"></i>
+                    </a>
+                    <a asp-action="Edit" asp-route-id="@repository.Id">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="#" data-id="@repository.Id" class="delete-link">
+                        <i class="fas fa-trash-alt"></i>
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
 else
 {
-<p>No repositories have been added yet.</p>
+    <p>No repositories have been added yet.</p>
 }
 
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
@@ -278,4 +284,3 @@ else
         });
     });
 </script>
-

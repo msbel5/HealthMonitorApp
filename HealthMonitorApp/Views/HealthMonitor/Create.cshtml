@@ -1,15 +1,15 @@
-    @model HealthMonitorApp.ViewModels.ServiceStatusCreateViewModel
+@model HealthMonitorApp.ViewModels.ServiceStatusCreateViewModel
 
-    @{
-        ViewBag.Title = "Create Service Status";
-        Layout = "_Layout";
-    }
+@{
+    ViewBag.Title = "Create Service Status";
+    Layout = "_Layout";
+}
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Create Service Status</title>
-        <style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Service Status</title>
+    <style>
             .container {
                 max-width: 600px;
             }
@@ -33,92 +33,105 @@
                 float: right;
             }
         </style>
-    </head>
-    <body>
+</head>
+<body>
 
-    <div class="container mt-5">
-        <h2 class="text-center">Create Service Status</h2>
-        <form asp-action="Create" asp-controller="HealthMonitor" method="post">
-            <!-- Service Status Name -->
-            <div class="form-group">
-                <label for="Name">Service Status Name</label>
-                @Html.ValidationMessageFor(model => model.ServiceName)
-                <input type="text" class="form-control" id="Name" name="ServiceName" required maxlength="100">
-            </div>
-            <!-- Expected Status Code -->
-            <div class="form-group">
-                <label for="ExpectedStatusCode">Expected Status Code</label>
-                @Html.ValidationMessageFor(model => model.ExpectedStatusCode)
-                <input type="number" class="form-control" id="ExpectedStatusCode" name="ExpectedStatusCode" required min="100" max="599">
-            </div>
-            <!-- CURL Command -->
-            <div class="form-group">
-                <div class="d-flex justify-content-between align-items-center">
-                    <label for="CurlCommand" class="mb-0">CURL Command</label>
-                    @Html.ValidationMessageFor(model => model.cURL)
-                    <div style="float: right">
-                        <button type="button" id="remove-curl-command" class="btn btn-link p-0" style="display: none;"><i class="fa fa-minus"></i></button>  <!-- Added inline style to hide the button initially -->
-                        <button type="button" id="add-curl-command" class="btn btn-link p-0"><i class="fa fa-plus"></i></button>
-                        <button type="button" id="helpIcon" class="btn btn-link p-0"><i class="fa fa-question-circle"></i></button>
-                    </div>
-                </div>
-                <div id="curl-commands-container">
-                    <textarea class="form-control curl-command" rows="4" name="cURL" required pattern="^(https?:\/\/.+|curl\s+.+)$" title="The cURL field must be a valid URL or cURL command."></textarea>
-                </div>
-            </div>
-            <!-- Existing API Groups -->
-            <div class="form-group">
-                <label for="ExistingApiGroups">API Groups</label>
-                <select class="form-control" id="ExistingApiGroups" name="ApiGroupID">
-                    <option value="auto" selected>Auto Group</option>
-                    <option value="addNew">Add New API Group</option>
-                    @if (Model.ApiGroups != null) { 
-                        @foreach (var group in Model.ApiGroups) {
-                            <option value="@group.ID">@group.Name</option> } }
-                </select>
-            </div>
-            <!-- New API Group Name -->
-            <div class="form-group" id="newApiGroupDiv" style="display:none;">
-                <label for="NewApiGroupName">New API Group Name</label>
-                <input type="text" class="form-control" id="NewApiGroupName" name="NewApiGroupName">
-            </div>
-
-
-            <!-- Custom Assertion -->
-            <div class="form-group">
-                <div class="d-flex justify-content-between align-items-center">
-                    <label asp-for="AssertionScript">Assertion Script (Optional)</label>
-                    <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#assertionHelpModal"><i class="fa fa-question-circle"></i></button>
-                </div>
-                <div class="code-display" id="editor"></div>
-            </div>
-            
-            <!-- Create Button -->
-            <div class="form-group text-center">
-                <button type="submit" class="btn btn-primary">Create</button>
-            </div>
-        </form>
-        <div id="errorDiv" style="color: red; display:none;">
-            <strong>Error:</strong> <span id="errorMsg">
-                @if (TempData["Error"] != null)
-                {
-                    <div class="alert alert-danger">
-                        @TempData["Error"]
-                    </div>
-                }
-            </span>
+<div class="container mt-5">
+    <h2 class="text-center">Create Service Status</h2>
+    <form asp-action="Create" asp-controller="HealthMonitor" method="post">
+        <!-- Service Status Name -->
+        <div class="form-group">
+            <label for="Name">Service Status Name</label>
+            @Html.ValidationMessageFor(model => model.ServiceName)
+            <input type="text" class="form-control" id="Name" name="ServiceName" required maxlength="100">
         </div>
-    </div>
+        <!-- Expected Status Code -->
+        <div class="form-group">
+            <label for="ExpectedStatusCode">Expected Status Code</label>
+            @Html.ValidationMessageFor(model => model.ExpectedStatusCode)
+            <input type="number" class="form-control" id="ExpectedStatusCode" name="ExpectedStatusCode" required min="100" max="599">
+        </div>
+        <!-- CURL Command -->
+        <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center">
+                <label for="CurlCommand" class="mb-0">CURL Command</label>
+                @Html.ValidationMessageFor(model => model.cURL)
+                <div style="float: right">
+                    <button type="button" id="remove-curl-command" class="btn btn-link p-0" style="display: none;">
+                        <i class="fa fa-minus"></i>
+                    </button> <!-- Added inline style to hide the button initially -->
+                    <button type="button" id="add-curl-command" class="btn btn-link p-0">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                    <button type="button" id="helpIcon" class="btn btn-link p-0">
+                        <i class="fa fa-question-circle"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="curl-commands-container">
+                <textarea class="form-control curl-command" rows="4" name="cURL" required pattern="^(https?:\/\/.+|curl\s+.+)$" title="The cURL field must be a valid URL or cURL command."></textarea>
+            </div>
+        </div>
+        <!-- Existing API Groups -->
+        <div class="form-group">
+            <label for="ExistingApiGroups">API Groups</label>
+            <select class="form-control" id="ExistingApiGroups" name="ApiGroupID">
+                <option value="auto" selected>Auto Group</option>
+                <option value="addNew">Add New API Group</option>
+                @if (Model.ApiGroups != null)
+                {
+                    @foreach (var group in Model.ApiGroups)
+                    {
+                        <option value="@group.ID">@group.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <!-- New API Group Name -->
+        <div class="form-group" id="newApiGroupDiv" style="display:none;">
+            <label for="NewApiGroupName">New API Group Name</label>
+            <input type="text" class="form-control" id="NewApiGroupName" name="NewApiGroupName">
+        </div>
 
-    <div>
-        <a asp-action="Index">Back to List</a>
+
+        <!-- Custom Assertion -->
+        <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center">
+                <label asp-for="AssertionScript">Assertion Script (Optional)</label>
+                <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#assertionHelpModal">
+                    <i class="fa fa-question-circle"></i>
+                </button>
+            </div>
+            <div class="code-display" id="editor"></div>
+        </div>
+
+        <!-- Create Button -->
+        <div class="form-group text-center">
+            <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+    </form>
+    <div id="errorDiv" style="color: red; display:none;">
+        <strong>Error:</strong>
+        <span id="errorMsg">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @TempData["Error"]
+                </div>
+            }
+        </span>
     </div>
-    </body>
-    
-    @await Html.PartialAsync("_AssertionHelpModal")
-    @await Html.PartialAsync("_DynamicStringHelpModal")
-    
-    @section Scripts {
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+</body>
+
+@await Html.PartialAsync("_AssertionHelpModal")
+@await Html.PartialAsync("_DynamicStringHelpModal")
+
+@section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js"></script>
     <!-- Load Monaco Editor -->
     <script>
@@ -216,7 +229,7 @@
 
         return text.ToString().Contains(\"A Simple PDF File\");
     }
-}`;
+        }`;
                 insertScriptIntoEditor(pdfScript);
                 assertionHelpModal.hide();
             });
@@ -281,4 +294,5 @@ return responseText.Contains("expectedTextInResponse");`;
             });
         });
     </script>
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

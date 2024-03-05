@@ -1,6 +1,6 @@
-namespace HealthMonitorApp.Services;
-
 using Microsoft.AspNetCore.SignalR;
+
+namespace HealthMonitorApp.Services;
 
 public class NotificationHub : Hub
 {

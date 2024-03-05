@@ -186,8 +186,9 @@ return (string)jsonResponse["specificKey"] == "expectedValue";`;
                 var imageTextCheckScript = 
 `using (var imageStream = await response.Content.ReadAsStreamAsync())
 {
+    var imageBytes = new byte[imageStream.Length];
     var ocrEngine = new Tesseract.TesseractEngine(@@"./tessdata", "eng", Tesseract.EngineMode.Default);
-    var img = Pix.LoadFromStream(imageStream);
+    var img = Pix.LoadFromMemory(imageBytes);
     var page = ocrEngine.Process(img);
     var text = page.GetText();
     return text.Contains("expectedTextInImage");
@@ -215,4 +216,3 @@ return responseText.Contains("expectedTextInResponse");`;
                 assertionHelpModal.hide();
             });
 </script>
-    

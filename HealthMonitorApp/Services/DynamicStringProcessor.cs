@@ -15,7 +15,8 @@ public class DynamicStringProcessor
             var jsCode = match.Groups[1].Value; // extract JS code without ${{}}
             var engine = new Engine();
             var result = engine.Execute(jsCode).GetCompletionValue().ToString(); // execute JS code
-            curlCommand = curlCommand.Replace(match.Value, result); // replace JS code with the result in the original string
+            curlCommand =
+                curlCommand.Replace(match.Value, result); // replace JS code with the result in the original string
         }
 
         return curlCommand;
@@ -27,14 +28,9 @@ public class DynamicStringProcessor
         var disallowed = new[] { "eval", "Function", "window", "document", "require" };
 
         foreach (var item in disallowed)
-        {
             if (script.Contains(item))
-            {
                 return false;
-            }
-        }
 
         return true;
     }
-
 }

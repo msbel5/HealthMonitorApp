@@ -1,3 +1,3 @@
 ﻿<Project>
-  <Import Project="../buildMultiTargeting/HealthMonitorApp.props" />
+  <Import Project="..\buildMultiTargeting\HealthMonitorApp.props" />
 </Project>

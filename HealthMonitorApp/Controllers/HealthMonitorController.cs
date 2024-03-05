@@ -1,28 +1,23 @@
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HealthMonitorApp.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-
 
 namespace HealthMonitorApp.Controllers;
 
 public class HealthMonitorController : Controller
 {
+    private readonly AssertionService _assertionService;
     private readonly ApplicationDbContext _context;
     private readonly HealthCheckService _healthCheckService;
-    private readonly AssertionService _assertionService;
     private readonly ILogger<HealthMonitorController> _logger;
 
-    public HealthMonitorController(ApplicationDbContext context,AssertionService assertionService, HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
+    public HealthMonitorController(ApplicationDbContext context, AssertionService assertionService,
+        HealthCheckService healthCheckService, ILogger<HealthMonitorController> logger)
     {
         _context = context;
         _healthCheckService = healthCheckService;
@@ -36,9 +31,7 @@ public class HealthMonitorController : Controller
             .Include(apiEndPoints => apiEndPoints.ApiEndpoint)
             .Include(apiEndPoints => apiEndPoints.ApiEndpoint.ApiGroup).ToList();
         foreach (var serviceStatus in serviceStatusList)
-        {
             await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
-        }
 
         return RedirectToAction("Index"); // Redirect to the dashboard or appropriate view
     }
@@ -69,22 +62,22 @@ public class HealthMonitorController : Controller
 
             double averageResponseTime = 0; // Default value
 
-            if (historiesForService.Any()) // Check if there are any histories for the service
-            {
-                averageResponseTime = historiesForService.Average(h => h.ResponseTime);
-            }
+            if (historiesForService.Count != 0) averageResponseTime = historiesForService.Average(h => h.ResponseTime);
+
+            if (service.ResponseTime.ToString() != null) service.ResponseTime = 0;
 
             var viewModel = new ServiceStatusIndexViewModel
             {
                 ID = service.ID,
                 Name = service.Name,
                 IsHealthy = service.IsHealthy,
-                ApiGroupName = service.ApiEndpoint.ApiGroup.Name,
+                ApiGroupName = service.ApiEndpoint?.ApiGroup?.Name ?? "Unknown", // Fallback to "Unknown" if null
                 CurrentResponseTime = service.ResponseTime,
                 LastThreeResponseTimes = lastThreeHistories,
                 AverageResponseTime = averageResponseTime,
                 LastCheck = service.CheckedAt
             };
+
 
             viewModelList.Add(viewModel);
         }
@@ -95,7 +88,6 @@ public class HealthMonitorController : Controller
 
         return View(viewModelList);
     }
-
 
 
     public IActionResult Create()
@@ -116,87 +108,79 @@ public class HealthMonitorController : Controller
         if (!ModelState.IsValid)
         {
             // Log the validation errors
-            foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-            {
-                _logger.LogWarning(error.ErrorMessage);
-            }
+            foreach (var error in ModelState.Values.SelectMany(v => v.Errors)) _logger.LogWarning(error.ErrorMessage);
 
             // Return the view with the current model to show validation errors
+
+            model.ApiGroups = _context.ApiGroups.ToList();
             return View(model);
         }
-        else
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            ApiGroup apiGroup;
+
+            if (model.ApiGroupId == "addNew" && !string.IsNullOrEmpty(model.NewApiGroupName))
             {
-                ApiGroup apiGroup;
-
-                if (model.ApiGroupId == "addNew" && !string.IsNullOrEmpty(model.NewApiGroupName))
-                {
-                    apiGroup = new ApiGroup { Name = model.NewApiGroupName };
-                    _context.ApiGroups.Add(apiGroup);
-                }
-                else if (int.TryParse(model.ApiGroupId, out var groupId))
-                {
-                    apiGroup = await _context.ApiGroups.FindAsync(groupId);
-                }
-                else
-                {
-                    apiGroup = new ApiGroup { Name = ExtractApiGroupName(model.cURL) };
-                    _context.ApiGroups.Add(apiGroup);
-                }
-
-                await _context.SaveChangesAsync();
-
-                var serviceStatus = new ServiceStatus
-                {
-                    Name = model.ServiceName,
-                };
-                
-
-                if (!string.IsNullOrWhiteSpace(model.AssertionScript))
-                {
-                    HttpResponseMessage mockResponse = new HttpResponseMessage
-                    {
-                        StatusCode = HttpStatusCode.OK,
-                        Content = new StringContent("Mock response"),
-                                    
-                    };
-                    // Verify the Assertion Script
-                    var scriptCheckResult = CheckCompilation(model.AssertionScript);
-                    if (!scriptCheckResult.Success)
-                    {
-                        // Handle and return compilation errors
-                        TempData["Error"] = "Compilation error in Assertion Script.";
-                        return View(model);
-                    }
-
-                    serviceStatus.AssertionScript = model.AssertionScript;
-                }
-
-                _context.ServiceStatuses.Add(serviceStatus);
-                await _context.SaveChangesAsync();
-
-                var apiEndpoint = new ApiEndpoint
-                {
-                    Name = ExtractApiName(model.cURL),
-                    cURL = model.cURL,
-                    ExpectedStatusCode = model.ExpectedStatusCode,
-                    ApiGroupID = apiGroup.ID,
-                    ServiceStatusID = serviceStatus.ID
-                };
-
-                _context.ApiEndpoints.Add(apiEndpoint);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
-                return RedirectToAction(nameof(Index));
+                apiGroup = new ApiGroup { Name = model.NewApiGroupName };
+                _context.ApiGroups.Add(apiGroup);
             }
-            catch (Exception ex)
+            else if (int.TryParse(model.ApiGroupId, out var groupId))
             {
-                _logger.LogError($"Error: {ex.Message}");
-                await transaction.RollbackAsync();
+                apiGroup = await _context.ApiGroups.FindAsync(groupId);
             }
+            else
+            {
+                apiGroup = new ApiGroup { Name = ExtractApiGroupName(model.cURL) };
+                _context.ApiGroups.Add(apiGroup);
+            }
+
+            await _context.SaveChangesAsync();
+
+            var serviceStatus = new ServiceStatus
+            {
+                Name = model.ServiceName
+            };
+
+
+            if (!string.IsNullOrWhiteSpace(model.AssertionScript))
+            {
+                // Verify the Assertion Script
+                var scriptCheckResult =
+                    await _assertionService.CheckCompilation(new HttpResponseMessage(), model.AssertionScript);
+                if (!scriptCheckResult.Success)
+                {
+                    // Handle and return compilation errors
+                    TempData["Error"] = "Compilation error in Assertion Script.";
+                    return View(model);
+                }
+
+                serviceStatus.AssertionScript = model.AssertionScript;
+            }
+
+            _context.ServiceStatuses.Add(serviceStatus);
+            await _context.SaveChangesAsync();
+
+            var apiEndpoint = new ApiEndpoint
+            {
+                Name = ExtractApiName(model.cURL),
+                cURL = model.cURL,
+                ExpectedStatusCode = model.ExpectedStatusCode,
+                ApiGroupID = apiGroup.ID,
+                ServiceStatusID = serviceStatus.ID
+            };
+
+            _context.ApiEndpoints.Add(apiEndpoint);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error: {ex.Message}");
+            await transaction.RollbackAsync();
         }
 
         _logger.LogWarning("Model state is not valid");
@@ -213,17 +197,13 @@ public class HealthMonitorController : Controller
             var pathSegments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
             // Determining the position of the API group name based on the URL structure
-            if (pathSegments.Length >= 3 && (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) || pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase)))
-            {
+            if (pathSegments.Length >= 3 && (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) ||
+                                             pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase)))
                 return pathSegments[1];
-            }
-            else if (pathSegments.Length >= 2)
-            {
-                return pathSegments[0];
-            }
+            if (pathSegments.Length >= 2) return pathSegments[0];
         }
 
-        return "Default";  // Default group name if extraction fails; adapt as needed
+        return "Default"; // Default group name if extraction fails; adapt as needed
     }
 
     private string ExtractApiName(string cURL)
@@ -236,37 +216,27 @@ public class HealthMonitorController : Controller
             var pathSegments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
             // Determining the position of the API name based on the URL structure
-            if (pathSegments.Length >= 3 && (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) || pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase)))
-            {
+            if (pathSegments.Length >= 3 && (pathSegments[0].Equals("controller", StringComparison.OrdinalIgnoreCase) ||
+                                             pathSegments[0].Equals("api", StringComparison.OrdinalIgnoreCase)))
                 return pathSegments[2];
-            }
-            else if (pathSegments.Length >= 2)
-            {
-                return pathSegments[1];
-            }
+            if (pathSegments.Length >= 2) return pathSegments[1];
         }
 
-        return "DefaultApiName";  // Default API name if extraction fails; adapt as needed
+        return "DefaultApiName"; // Default API name if extraction fails; adapt as needed
     }
 
     // GET: HealthMonitor/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
+        if (id == null) return NotFound();
 
         var serviceStatus = await _context.ServiceStatuses
             .Include(s => s.ApiEndpoint)
             .FirstOrDefaultAsync(s => s.ID == id.Value);
 
-        if (serviceStatus == null)
-        {
-            return NotFound();
-        }
+        if (serviceStatus == null) return NotFound();
 
-        var viewModel = new ServiceStatusEditViewModel()
+        var viewModel = new ServiceStatusEditViewModel
         {
             ID = serviceStatus.ID,
             Name = serviceStatus.Name,
@@ -284,7 +254,9 @@ public class HealthMonitorController : Controller
     // POST: HealthMonitor/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("ID,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupID,NewApiGroupName,ApiGroups")] ServiceStatusEditViewModel viewModel)
+    public async Task<IActionResult> Edit(int id,
+        [Bind("ID,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupID,NewApiGroupName,ApiGroups")]
+        ServiceStatusEditViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
@@ -308,16 +280,19 @@ public class HealthMonitorController : Controller
                 var serviceStatus = await _context.ServiceStatuses.Include(s => s.ApiEndpoint)
                     .FirstOrDefaultAsync(s => s.ID == viewModel.ID);
 
-                if (serviceStatus == null)
-                {
-                    return NotFound();
-                }
+                if (serviceStatus == null) return NotFound();
 
                 // Update the properties of serviceStatus and its ApiEndpoint based on viewModel
                 serviceStatus.Name = viewModel.Name;
                 serviceStatus.ApiEndpoint.ExpectedStatusCode = viewModel.ExpectedStatusCode;
                 serviceStatus.ApiEndpoint.cURL = viewModel.CURL;
                 serviceStatus.ApiEndpoint.ApiGroupID = viewModel.ApiGroupID;
+                if (viewModel.AssertionScript != null)
+                {
+                    var scriptCheckResult =
+                        await _assertionService.CheckCompilation(new HttpResponseMessage(), viewModel.AssertionScript);
+                }
+
                 serviceStatus.AssertionScript = viewModel.AssertionScript;
 
                 _context.Update(serviceStatus);
@@ -326,17 +301,14 @@ public class HealthMonitorController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ServiceStatusExists(viewModel.ID))  // Make sure to implement ServiceStatusExists method
-                {
+                if (!ServiceStatusExists(viewModel.ID)) // Make sure to implement ServiceStatusExists method
                     return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
+
             return RedirectToAction(nameof(Index));
         }
+
         return View(viewModel);
     }
 
@@ -353,10 +325,7 @@ public class HealthMonitorController : Controller
             .ThenInclude(a => a.ApiGroup)
             .FirstOrDefaultAsync(s => s.ID == id);
 
-        if (serviceStatus == null)
-        {
-            return NotFound();
-        }
+        if (serviceStatus == null) return NotFound();
 
         ViewBag.ApiGroups = await _context.ApiGroups.ToListAsync();
         var dynamicStringProcessor = new DynamicStringProcessor();
@@ -368,22 +337,17 @@ public class HealthMonitorController : Controller
     public IActionResult Delete(int id)
     {
         var serviceStatus = _context.ServiceStatuses.Find(id);
-        if (serviceStatus == null)
-        {
-            return NotFound();
-        }
+        if (serviceStatus == null) return NotFound();
         return PartialView("_DeleteConfirmation", serviceStatus);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
+    [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var serviceStatus = await _context.ServiceStatuses.FindAsync(id);
-        if (serviceStatus == null)
-        {
-            return NotFound();
-        }
+        if (serviceStatus == null) return NotFound();
 
         // Find the associated ApiEndpoint
         var relatedEndpoint = _context.ApiEndpoints
@@ -397,10 +361,7 @@ public class HealthMonitorController : Controller
         _context.ServiceStatuses.Remove(serviceStatus);
 
         // Remove the ApiEndpoint itself
-        if (relatedEndpoint != null)
-        {
-            _context.ApiEndpoints.Remove(relatedEndpoint);
-        }
+        if (relatedEndpoint != null) _context.ApiEndpoints.Remove(relatedEndpoint);
 
         await _context.SaveChangesAsync();
 
@@ -410,58 +371,11 @@ public class HealthMonitorController : Controller
             var isGroupOrphaned = !_context.ApiEndpoints.Any(e => e.ApiGroupID == relatedEndpoint.ApiGroupID);
 
             if (isGroupOrphaned && relatedEndpoint.ApiGroup != null)
-            {
                 _context.ApiGroups.Remove(relatedEndpoint.ApiGroup);
-            }
 
             await _context.SaveChangesAsync();
         }
 
         return RedirectToAction(nameof(Index));
     }
-    
-    [HttpPost]
-    public (bool Success, IEnumerable<string> Errors) CheckCompilation([FromBody] string script)
-    {
-        // Construct the full script with a static method
-        string fullScript = $@"
-                using System.Net.Http;
-                public static class DynamicScript
-                {{
-                    public static bool AssertResponse(HttpResponseMessage response)
-                    {{
-                        {script}
-                    }}
-                }}";
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(fullScript);
-        var references = new MetadataReference[]
-        {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(HttpResponseMessage).Assembly.Location)
-            // Add other necessary assemblies
-        };
-
-        var compilation = CSharpCompilation.Create("DynamicScriptAssembly")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(references)
-            .AddSyntaxTrees(syntaxTree);
-
-        using (var ms = new MemoryStream())
-        {
-            EmitResult result = compilation.Emit(ms);
-            if (!result.Success)
-            {
-                var errors = result.Diagnostics
-                    .Where(diagnostic => diagnostic.IsWarningAsError || diagnostic.Severity == DiagnosticSeverity.Error)
-                    .Select(diagnostic => diagnostic.ToString());
-
-                return (false, errors);
-            }
-
-            return (true, Enumerable.Empty<string>());
-
-        }
-    }
-
 }

@@ -1,12 +1,10 @@
-using System.Net.Mail;
-using HealthMonitorApp.Models;
+using HealthMonitorApp.Data;
 using HealthMonitorApp.Services;
-using HealthMonitorApp.Data;  // Add this if DataSeeder is in a different namespace
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 using HealthMonitorApp.Tools;
 using HealthMonitorApp.Tools.Providers;
+using Microsoft.EntityFrameworkCore;
+
+// Add this if DataSeeder is in a different namespace
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,15 +17,15 @@ builder.Services.AddScoped<AssertionService>();
 builder.Services.AddScoped<WarningService>();
 builder.Services.AddTransient<RepositoryService>();
 builder.Services.AddScoped<ReportHandler>();
-builder.Services.AddTransient<DataSeeder>();  // Register DataSeeder as a service
+builder.Services.AddTransient<DataSeeder>(); // Register DataSeeder as a service
 builder.Services.AddHostedService<HealthCheckHostedService>();
 builder.Services.AddSignalR();
 
 // Register the VCS and CodeCheck services
 builder.Services.AddTransient<GitVcsProvider>(); // Assuming GitVcsProvider doesn't require interfaces to be registered
 builder.Services.AddTransient<VcsService>();
-builder.Services.AddTransient<ApplicationInspectorService>(); // Singleton to ensure one instance handles the installation check
-
+builder.Services
+    .AddScoped<ApplicationInspectorService>(); // Singleton to ensure one instance handles the installation check
 
 
 var app = builder.Build();
@@ -47,13 +45,12 @@ app.UseRouting();
 app.UseAuthorization();
 
 
-
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=HealthMonitor}/{action=Index}/{id?}");
-    endpoints.MapHub<NotificationHub>("/notificationHub");  // Add this line to map the SignalR hub
+        "default",
+        "{controller=HealthMonitor}/{action=Index}/{id?}");
+    endpoints.MapHub<NotificationHub>("/notificationHub"); // Add this line to map the SignalR hub
 });
 
 // Ensure database is created
@@ -85,7 +82,8 @@ lifetime.ApplicationStarted.Register(() =>
     using (var scope = scopeFactory.CreateScope())
     {
         var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
-        Task.Run(async () => await seeder.SeedData()).GetAwaiter().GetResult(); // Run the seeding and wait for it to complete
+        Task.Run(async () => await seeder.SeedData()).GetAwaiter()
+            .GetResult(); // Run the seeding and wait for it to complete
     }
 });
 

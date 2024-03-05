@@ -6,6 +6,7 @@ namespace HealthMonitorApp.ViewModels;
 public class ServiceStatusEditViewModel
 {
     public int ID { get; set; }
+
     [Required]
     [StringLength(100, ErrorMessage = "Name must be under 100 characters.")]
     public string Name { get; set; }
@@ -15,7 +16,8 @@ public class ServiceStatusEditViewModel
     public int ExpectedStatusCode { get; set; }
 
     [Required]
-    [RegularExpression(@"^(https?:\/\/.+|curl\s+.+)$", ErrorMessage = "The CURL field must be a valid URL or cURL command.")]
+    [RegularExpression(@"^(https?:\/\/.+|curl\s+.+)$",
+        ErrorMessage = "The CURL field must be a valid URL or cURL command.")]
     public string CURL { get; set; }
 
     public string? AssertionScript { get; set; }

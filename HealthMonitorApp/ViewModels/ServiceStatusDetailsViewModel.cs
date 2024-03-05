@@ -4,5 +4,5 @@ namespace HealthMonitorApp.ViewModels;
 
 public class ServiceStatusDetailsViewModel
 {
-        public ServiceStatus ServiceStatus { get; set; }
+    public ServiceStatus ServiceStatus { get; set; }
 }

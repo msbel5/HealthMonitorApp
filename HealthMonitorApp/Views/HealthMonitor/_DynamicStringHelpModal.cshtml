@@ -7,7 +7,7 @@
             </div>
             <div class="modal-body">
                 <p>This tool allows you to include JavaScript code dynamically in your curl commands. Use the format <code>${{JavaScript Code}}</code> within your command.</p>
-                                
+
                 <!-- Expanded Information -->
                 <h6>How to Use:</h6>
                 <p>Write JavaScript code inside <code>${{ }}</code>. This code is executed while making request so it can be changed every time its called and the output is inserted into your curl command.</p>
@@ -18,7 +18,8 @@
                 <!-- JavaScript Testing Area -->
                 <h6>Test Your JavaScript Code:</h6>
                 <textarea id="js-test-area" class="form-control" rows="3">new Date().toISOString()</textarea>
-                <div class="text-center mt-3"> <!-- Center align button and add margin-top -->
+                <div class="text-center mt-3">
+                    <!-- Center align button and add margin-top -->
                     <button id="test-js-btn" class="btn btn-primary">Test Code</button>
                 </div>
                 <pre id="js-test-result" class="test-result mt-3 d-none"></pre> <!-- Hide initially and add margin-top -->
@@ -26,7 +27,8 @@
                 <!-- Curl Parsing Testing Area -->
                 <h6>Test Your Curl Command:</h6>
                 <textarea id="curl-test-area" class="form-control mt-2" rows="3">curl http://example.com/data?date=${{new Date().toISOString()}}</textarea>
-                <div class="text-center mt-3"> <!-- Center align button and add margin-top -->
+                <div class="text-center mt-3">
+                    <!-- Center align button and add margin-top -->
                     <button id="test-curl-btn" class="btn btn-primary">Parse Curl</button>
                 </div>
                 <pre id="curl-test-result" class="test-result mt-3 d-none"></pre> <!-- Hide initially and add margin-top -->

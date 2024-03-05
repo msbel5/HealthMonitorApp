@@ -1,21 +1,24 @@
 using System.Net;
-using HealthMonitorApp.Data;
-using HealthMonitorApp.Models;
+using Emgu.CV;
+using HtmlAgilityPack;
+using iText.Kernel.Pdf;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Newtonsoft.Json;
 using Tesseract;
 
 namespace HealthMonitorApp.Services;
 
 public class AssertionService
 {
-    private readonly ILogger<AssertionService> _logger;
     private const string UserScriptLog = "User Script: \n";
     private const string ScriptResultLog = "Script Execution Result: ";
     private const string ScriptCompilationErrorLog = "Script compilation error: ";
     private const string ScriptExecutionErrorLog = "Script execution error: ";
+    private readonly ILogger<AssertionService> _logger;
 
-    public AssertionService( ILogger<AssertionService> logger)
+    public AssertionService(ILogger<AssertionService> logger)
     {
         _logger = logger;
     }
@@ -28,7 +31,7 @@ public class AssertionService
             _logger.LogInformation(UserScriptLog + userScript);
             var scriptOptions = GetScriptOptions();
             var globals = new Globals { response = response };
-            bool result = await CSharpScript.EvaluateAsync<bool>(userScript, scriptOptions, globals);
+            var result = await CSharpScript.EvaluateAsync<bool>(userScript, scriptOptions, globals);
             _logger.LogInformation(ScriptResultLog + result);
 
             return result;
@@ -58,12 +61,12 @@ public class AssertionService
     {
         options.AddReferences(
             typeof(HttpResponseMessage).Assembly,
-            typeof(Newtonsoft.Json.JsonConvert).Assembly,
+            typeof(JsonConvert).Assembly,
             typeof(Image).Assembly,
-            typeof(iText.Kernel.Pdf.PdfDocument).Assembly,
-            typeof(HtmlAgilityPack.HtmlDocument).Assembly,
+            typeof(PdfDocument).Assembly,
+            typeof(HtmlDocument).Assembly,
             typeof(TesseractEngine).Assembly,
-            typeof(Emgu.CV.Image<,>).Assembly  
+            typeof(Image<,>).Assembly
         );
     }
 
@@ -80,18 +83,14 @@ public class AssertionService
             "SixLabors.ImageSharp",
             "iText.Kernel.Pdf",
             "HtmlAgilityPack",
-            "Tesseract", 
+            "Tesseract",
             "Emgu.CV",
             "Emgu.CV.Structure"
         );
     }
 
-    public class Globals
-    {
-        public HttpResponseMessage response { get; set; }
-    }
-    
-    public async Task<(bool Success, IEnumerable<string> Errors)> CheckCompilation(HttpResponseMessage response, string userScript)
+    public Task<(bool Success, IEnumerable<string> Errors)> CheckCompilation(HttpResponseMessage response,
+        string userScript)
     {
         try
         {
@@ -103,23 +102,25 @@ public class AssertionService
             // Try compiling the script without executing it
             var script = CSharpScript.Create<bool>(userScript, scriptOptions, typeof(Globals));
             var diagnostics = script.Compile();
-            
-            if (diagnostics.Any(diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
+
+            if (diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
             {
-                var errors = diagnostics.Where(diag => diag.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+                var errors = diagnostics.Where(diag => diag.Severity == DiagnosticSeverity.Error)
                     .Select(diag => diag.ToString());
-                return (false, errors);
+                return Task.FromResult((false, errors));
             }
 
-            return (true, Enumerable.Empty<string>());
+            return Task.FromResult((true, Enumerable.Empty<string>()));
         }
         catch (CompilationErrorException e)
         {
-            return HandleException("Script compilation error: ", e);
+            return Task.FromResult<(bool Success, IEnumerable<string> Errors)>(
+                HandleException("Script compilation error: ", e));
         }
         catch (Exception e)
         {
-            return HandleException("Error in checking script compilation: ", e);
+            return Task.FromResult<(bool Success, IEnumerable<string> Errors)>(
+                HandleException("Error in checking script compilation: ", e));
         }
     }
 
@@ -134,4 +135,8 @@ public class AssertionService
         return (false, new[] { e.Message });
     }
 
+    public class Globals
+    {
+        public HttpResponseMessage response { get; set; }
+    }
 }

@@ -33,7 +33,6 @@ public class ApiGroupController : Controller
     public async Task<IActionResult> Create([Bind("ID,Name")] ApiGroup apiGroup)
     {
         if (ModelState.IsValid)
-        {
             try
             {
                 _context.Add(apiGroup);
@@ -45,7 +44,6 @@ public class ApiGroupController : Controller
                 // Log the exception (ex) here or show an error message to the user
                 ModelState.AddModelError("", "An error occurred while creating the API Group.");
             }
-        }
 
         // If we got this far, something failed, redisplay form
         return View(apiGroup);
@@ -57,10 +55,7 @@ public class ApiGroupController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
-        if (apiGroup == null)
-        {
-            return NotFound();
-        }
+        if (apiGroup == null) return NotFound();
         return View(apiGroup);
     }
 
@@ -68,10 +63,7 @@ public class ApiGroupController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("ID,Name")] ApiGroup apiGroup)
     {
-        if (id != apiGroup.ID)
-        {
-            return NotFound();
-        }
+        if (id != apiGroup.ID) return NotFound();
 
         if (ModelState.IsValid)
         {
@@ -83,16 +75,13 @@ public class ApiGroupController : Controller
             catch (DbUpdateConcurrencyException)
             {
                 if (!ApiGroupExists(apiGroup.ID))
-                {
                     return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
+
             return RedirectToAction(nameof(Index));
         }
+
         return View(apiGroup);
     }
 
@@ -102,14 +91,10 @@ public class ApiGroupController : Controller
     }
 
 
-
     public async Task<IActionResult> Details(int id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
-        if (apiGroup == null)
-        {
-            return NotFound();
-        }
+        if (apiGroup == null) return NotFound();
         return View(apiGroup);
     }
 
@@ -118,33 +103,29 @@ public class ApiGroupController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         var apiGroup = await _context.ApiGroups
-            .Include(g => g.ApiEndpoints)  // Include related ApiEndpoints
+            .Include(g => g.ApiEndpoints) // Include related ApiEndpoints
             .FirstOrDefaultAsync(g => g.ID == id);
 
-        if (apiGroup == null)
-        {
-            return NotFound();
-        }
+        if (apiGroup == null) return NotFound();
 
         if (apiGroup.ApiEndpoints.Count > 0) // Check if there are associated endpoints
         {
             // Return a view with an error message, or however you want to inform the user
-            TempData["ErrorMessage"] = "Can't delete this API Group because it has associated Endpoints. Please delete or reassign those Endpoints first.";
-            return RedirectToAction(nameof(Index));// Return the same view with an error message
+            TempData["ErrorMessage"] =
+                "Can't delete this API Group because it has associated Endpoints. Please delete or reassign those Endpoints first.";
+            return RedirectToAction(nameof(Index)); // Return the same view with an error message
         }
 
         return PartialView("_DeleteConfirmation", apiGroup);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost]
+    [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
-        if (apiGroup == null)
-        {
-            return NotFound();
-        }
+        if (apiGroup == null) return NotFound();
 
         _context.ApiGroups.Remove(apiGroup);
         await _context.SaveChangesAsync();
@@ -152,25 +133,21 @@ public class ApiGroupController : Controller
     }
 
 
-
     [HttpPost]
     public async Task<IActionResult> FetchAuthToken(string authCurl)
     {
-        using (HttpClient client = new HttpClient())
+        using (var client = new HttpClient())
         {
-            HttpResponseMessage response = await client.GetAsync(authCurl);
+            var response = await client.GetAsync(authCurl);
             if (response.IsSuccessStatusCode)
             {
                 var responseData = await response.Content.ReadAsStringAsync();
                 var jsonObject = JObject.Parse(responseData);
                 var keys = jsonObject.Properties().Select(p => p.Name).ToList();
-                return Json(new { success = true, keys = keys });
+                return Json(new { success = true, keys });
             }
-            else
-            {
-                return Json(new { success = false, message = "Failed to fetch token." });
-            }
+
+            return Json(new { success = false, message = "Failed to fetch token." });
         }
     }
-
 }

@@ -10,4 +10,3 @@ public class ServiceStatusHistory
 
     public ServiceStatus ServiceStatus { get; set; }
 }
-

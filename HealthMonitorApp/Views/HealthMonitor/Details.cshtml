@@ -1,5 +1,5 @@
 @using System.Web
-@model HealthMonitorApp.Models.ServiceStatus
+@model ServiceStatus
 
 @{
     ViewBag.Title = "Service Status Details";
@@ -52,31 +52,37 @@
 
 <body>
 
-<<div class="container mt-5">
-     <h2 class="text-center">Service Status Details</h2>
+<
+<div class="container mt-5">
+    <h2 class="text-center">Service Status Details</h2>
 
-     <dl class="row">
-         <dt class="col-sm-4">Service Status Name</dt>
-         <dd class="col-sm-8">@Model.Name</dd>
+    <dl class="row">
+        <dt class="col-sm-4">Service Status Name</dt>
+        <dd class="col-sm-8">@Model.Name</dd>
 
-         <dt class="col-sm-4">Expected Status Code</dt>
-         <dd class="col-sm-8">@Model.ApiEndpoint.ExpectedStatusCode</dd>
+        <dt class="col-sm-4">Expected Status Code</dt>
+        <dd class="col-sm-8">@Model.ApiEndpoint.ExpectedStatusCode</dd>
 
-         <dt class="col-sm-4">API Group</dt>
-         <dd class="col-sm-8">@Model.ApiEndpoint.ApiGroup.Name</dd>
-         <dt class="col-sm-4">CURL Command</dt>
-         <div class="col-sm-8" style="padding-top: 0; margin-top: -1.5rem;">
+        <dt class="col-sm-4">API Group</dt>
+        <dd class="col-sm-8">@Model.ApiEndpoint.ApiGroup.Name</dd>
+        <dt class="col-sm-4">CURL Command</dt>
+        <div class="col-sm-8" style="padding-top: 0; margin-top: -1.5rem;">
             <span class="curl-command-inline" id="curl-commands-details-container"></span>
-        </div>         @if (Model.AssertionScript != null){
-         <dt class="col-sm-4">Assertion Script</dt>
-         <dd class="col-sm-8">
-            <div class="code-display" id="editor"></div>
-         </dd>}
-         @if (Model.ResponseContent != null){
-         <dt class="col-sm-4">Response Content</dt>
-         <dd class="col-sm-8 response-content-container"></dd>}
-     </dl>
- </div>
+        </div>
+        @if (Model.AssertionScript != null)
+        {
+            <dt class="col-sm-4">Assertion Script</dt>
+            <dd class="col-sm-8">
+                <div class="code-display" id="editor"></div>
+            </dd>
+        }
+        @if (Model.ResponseContent != null)
+        {
+            <dt class="col-sm-4">Response Content</dt>
+            <dd class="col-sm-8 response-content-container"></dd>
+        }
+    </dl>
+</div>
 <div class="text-center">
     <a asp-action="Edit" asp-route-id="@Model.ID">Edit</a> |
     <a asp-action="Index">Back to List</a>
@@ -146,7 +152,7 @@
                 return /<[^>]+>/.test(str);
             }
             </script>
-            <style>
+    <style>
             .response-iframe {
                 width: 100%;
                 border: none;
@@ -158,5 +164,5 @@
             }
             </style>
 
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

@@ -8,5 +8,4 @@ public interface IVcsProvider
     Task DownloadRepositoryAsync(RepositoryAnalysis? repositoryAnalysis);
     Task DeleteRepositoryAsync(RepositoryAnalysis? repositoryAnalysis);
     Task UpdateRepositoryAsync(RepositoryAnalysis? repositoryAnalysis);
-
 }

@@ -1,41 +1,24 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Tools.Providers;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Runtime.InteropServices;
-using HtmlAgilityPack;
 using Newtonsoft.Json;
-
 
 namespace HealthMonitorApp.Services;
 
-using System.Diagnostics;
-using System.Threading.Tasks;
-
-public class ApplicationInspectorService
-{ 
-
+public class ApplicationInspectorService(RepositoryService repositoryService)
+{
     private const string RepoPath = "Repos";
-    private RepositoryService _repositoryService;
-
-    public ApplicationInspectorService(RepositoryService repositoryService)
-    {
-        _repositoryService = repositoryService;
-    }
 
 
     public async Task EnsureInstalledAsync()
     {
-        if (!await IsInstalledAsync())
-        {
-            await InstallAsync();
-        }
+        if (!await IsInstalledAsync()) await InstallAsync();
     }
 
     private async Task<bool> IsInstalledAsync()
     {
-        var process = new Process()
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
@@ -48,7 +31,7 @@ public class ApplicationInspectorService
         };
 
         process.Start();
-        string output = await process.StandardOutput.ReadToEndAsync();
+        var output = await process.StandardOutput.ReadToEndAsync();
         await process.WaitForExitAsync();
 
         return output.Contains("Microsoft.CST.ApplicationInspector.CLI");
@@ -56,7 +39,7 @@ public class ApplicationInspectorService
 
     private async Task InstallAsync()
     {
-        var process = new Process()
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
@@ -71,12 +54,12 @@ public class ApplicationInspectorService
         process.Start();
         await process.WaitForExitAsync();
     }
-    
+
     private async Task<string> AnalyzeAsync(RepositoryAnalysis? repositoryAnalysis)
     {
-        string applicationInspector = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "appinspector.exe" : "appinspector";
+        var applicationInspector = GetApplicationInspectorPath();
 
-        
+
         var parentDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName;
 
         // Construct the path for repositories to be beside the project directory
@@ -84,13 +67,14 @@ public class ApplicationInspectorService
 
 
         var arguments = $"analyze -s \"{repositoryAnalysis.Path}\" -f json"; // Use the absolute path
-        var process = new Process()
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = applicationInspector,
                 Arguments = arguments,
                 RedirectStandardOutput = true,
+                RedirectStandardError = true, // Add this to capture standard error
                 UseShellExecute = false,
                 CreateNoWindow = true
             }
@@ -100,6 +84,7 @@ public class ApplicationInspectorService
         {
             process.Start();
             var result = await process.StandardOutput.ReadToEndAsync();
+            var errors = await process.StandardError.ReadToEndAsync(); // Capture any errors
             await process.WaitForExitAsync();
             return result; // JSON result of the analysis
         }
@@ -109,10 +94,10 @@ public class ApplicationInspectorService
             return $"Error executing Application Inspector: {ex.Message}";
         }
     }
-    
+
     // analyze and Construct output.html report
 
-    
+
     public async Task<RepositoryAnalysis?> AnalyzeRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var codeCheckService = new VcsService(new GitVcsProvider());
@@ -127,17 +112,16 @@ public class ApplicationInspectorService
 
         return updatedAnalysis;
     }
-    
+
     private RepositoryAnalysis? ParseAnalysisResult(string analysisResult, RepositoryAnalysis? repositoryAnalysis)
     {
         // Find the index of the first opening brace `{` which marks the start of the JSON structure
-        int jsonStartIndex = analysisResult.IndexOf('{');
+        var jsonStartIndex = analysisResult.IndexOf('{');
 
         if (jsonStartIndex != -1)
         {
             // Extract the JSON part from the analysisResult starting from the found index
-            string jsonPart = analysisResult.Substring(jsonStartIndex);
-
+            var jsonPart = analysisResult.Substring(jsonStartIndex);
         }
         else
         {
@@ -147,19 +131,20 @@ public class ApplicationInspectorService
 
         return repositoryAnalysis;
     }
-    
+
     public async Task<RepositoryAnalysis?> AnalyzeRepositoryForEndpointsAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         // First, generate the JSON summary of controllers and endpoints
-        string jsonSummary = await _repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
+        var jsonSummary = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
 
         // Deserialize the JSON summary back into a list of ControllerInfo objects
         var controllersInfo = JsonConvert.DeserializeObject<List<ApiGroup>>(jsonSummary);
 
         // Use the deserialized list to populate the repositoryAnalysis object
-        int totalControllers = controllersInfo.Count;
-        int totalEndpoints = controllersInfo.Sum(c => c.ApiEndpoints.Count);
-        int totalPublicEndpoints = controllersInfo.Sum(c => c.ApiEndpoints.Count(e => e.IsOpen != null && e.IsOpen.Value));
+        var totalControllers = controllersInfo.Count;
+        var totalEndpoints = controllersInfo.Sum(c => c.ApiEndpoints.Count);
+        var totalPublicEndpoints =
+            controllersInfo.Sum(c => c.ApiEndpoints.Count(e => e.IsOpen != null && e.IsOpen.Value));
 
         // Optional: Populate other analysis details as needed
         repositoryAnalysis.NumberOfControllers = totalControllers;
@@ -170,22 +155,22 @@ public class ApplicationInspectorService
 
         return repositoryAnalysis;
     }
-    
-    
-    
-    public async Task GenerateReportAsync(RepositoryAnalysis? repositoryAnalysis)
+
+
+    public static async Task GenerateReportAsync(RepositoryAnalysis? repositoryAnalysis)
     {
-        
-        string applicationInspector = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "appinspector.exe" : "appinspector";
+        var applicationInspector = GetApplicationInspectorPath();
 
 
-        var arguments = $"analyze -s \"{repositoryAnalysis.Path}\" -o \"{repositoryAnalysis.GetReportPath()}\""; // Use the absolute path
-        var process = new Process()
+        var arguments =
+            $"analyze -s \"{repositoryAnalysis.Path}\" -o \"{repositoryAnalysis.GetReportPath()}\""; // Use the absolute path
+        var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = applicationInspector,
                 Arguments = arguments,
+                RedirectStandardError = true, // Add this to capture standard error
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -196,6 +181,7 @@ public class ApplicationInspectorService
         {
             process.Start();
             var result = await process.StandardOutput.ReadToEndAsync();
+            var errors = await process.StandardError.ReadToEndAsync(); // Capture any errors
             await process.WaitForExitAsync();
         }
         catch (Exception ex)
@@ -205,5 +191,10 @@ public class ApplicationInspectorService
         }
     }
 
-    
+    private static string GetApplicationInspectorPath()
+    {
+        var applicationInspector =
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "appinspector.exe" : "appinspector";
+        return applicationInspector;
     }
+}

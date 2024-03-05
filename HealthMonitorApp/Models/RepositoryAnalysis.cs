@@ -1,22 +1,21 @@
+using System.Text;
+
 namespace HealthMonitorApp.Models;
 
 public class RepositoryAnalysis
 {
     private const string Report = "report.html";
-    
+
+
     public int Id { get; set; }
-    
+
     public string Name { get; set; }
     public string Url { get; set; }
-    
+
     public string? BaseUrl { get; set; }
-    
-    private string _branch = "master"; // Default branch set to 'master'
-    public string Branch
-    {
-        get => _branch;
-        set => _branch = value;
-    }
+
+    public string Branch { get; set; } = "master";
+
     public string? EncryptedUsername { get; set; }
     public string? EncryptedPassword { get; set; }
     public string Path { get; set; }
@@ -25,6 +24,8 @@ public class RepositoryAnalysis
     public int NumberOfPublicEndpoints { get; set; } = 0; // Default value
 
     public string LatestCommitHash { get; set; } = string.Empty; // Default value
+
+    public string? EncryptedVariables { get; set; } // JSON
 
     public ICollection<ApiGroup> ApiGroups { get; set; } = new List<ApiGroup>();
 
@@ -41,27 +42,37 @@ public class RepositoryAnalysis
     public (string Username, string Password) DecryptCredentials()
     {
         // Placeholder for decryption logic
-        string username = Decrypt(EncryptedUsername);
-        string password = Decrypt(EncryptedPassword);
+        var username = Decrypt(EncryptedUsername);
+        var password = Decrypt(EncryptedPassword);
         return (username, password);
+    }
+
+    public void EncryptVariables(string Variables)
+    {
+        // Placeholder for encryption logic
+        EncryptedUsername = Encrypt(Variables);
+    }
+
+    public string DecryptVariables()
+    {
+        var variables = Decrypt(EncryptedUsername);
+        return variables;
     }
 
     private string Encrypt(string input)
     {
         // Implement encryption logic here
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(input));
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(input));
     }
 
     private string Decrypt(string encryptedInput)
     {
         // Implement decryption logic here
-        return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encryptedInput));
+        return Encoding.UTF8.GetString(Convert.FromBase64String(encryptedInput));
     }
-    
+
     public string GetReportPath()
     {
-        return Path+ "/" + Report;
+        return Path + "/" + Report;
     }
-    
-    
 }
