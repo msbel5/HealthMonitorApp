@@ -7,6 +7,67 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <style>
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 1051; /* Bootstrap modal z-index is 1050 */
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .spinner {
+        position: relative;
+        top: 47.5%;
+        left: 47.5%;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        animation: spin 2s linear infinite;
+    }
+
+
+    @@keyframes heartbeat {
+        0% {
+            transform: scale(1) rotate(360deg);
+        }
+        25% {
+            transform: scale(1.2) ;
+        }
+        50% {
+            transform: scale(1) ;
+        }
+        75% {
+            transform: scale(1.2) ;
+        }
+        100% {
+            transform: scale(1) rotate(0deg);
+        }
+    }
+
+    .heartbeat-icon {
+        display: inline-block;
+        animation: heartbeat 2s infinite;
+        font-size: 30px; /* Adjust size as needed */
+        color: #e74c3c; /* Adjust color as needed */
+        position: relative;
+    }
+
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    </style>
+
+
 </head>
 <body>
 <header>
@@ -32,6 +93,11 @@
 </header>
 <div class="container">
     <main role="main" class="pb-3">
+                <div class="loading-overlay" id="loadingIndicator">
+                    <div  class="spinner">
+                        <i style="align-content: center; position: fixed; top: 30%; left: 30%; " class="fas fa-heartbeat heartbeat-icon"></i> <!-- Ensure FontAwesome is loaded -->
+                    </div>
+                </div>
         @RenderBody()
     </main>
 </div>
@@ -46,7 +112,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script></script>
+<script>
+    $(document).ready(function() {
+        // Handle AJAX start and stop globally
+        $(document).ajaxStart(function() {
+            showLoadingIndicator();
+        }).ajaxStop(function() {
+            hideLoadingIndicator();
+        });
+
+        // Handle form submissions
+        $("form").submit(function() {
+            showLoadingIndicator();
+        });
+
+        // Handle button/link clicks that imply an action
+        $(".action-button, .action-link").click(function() {
+            showLoadingIndicator();
+        });
+
+        // Handle navigation and refresh
+        window.addEventListener("beforeunload", showLoadingIndicator);
+
+        function showLoadingIndicator() {
+            $("#loadingIndicator").fadeIn("fast"); // Smoothly fade in the loading indicator
+        }
+
+        function hideLoadingIndicator() {
+            $("#loadingIndicator").fadeOut("fast"); // Smoothly fade out the loading indicator
+        }
+    });
+
+</script>
 @await RenderSectionAsync("Scripts", false)
 </body>
 </html>
