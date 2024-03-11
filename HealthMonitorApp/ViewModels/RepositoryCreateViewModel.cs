@@ -10,5 +10,11 @@ public class RepositoryCreateViewModel
     public string? BaseUrl { get; set; }
 
     public bool IntegrateEndpoints { get; set; } = false;
-    public string? Variables { get; set; }
+    
+    public List<VariableViewModel> Variables { get; set; } = new List<VariableViewModel>();
+    
+    public string? ExcludedControllers { get; set; }
+    public string? ExcludedMethods { get; set; }
+
+
 }

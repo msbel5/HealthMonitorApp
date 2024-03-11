@@ -30,7 +30,7 @@ public class ApiGroupController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("ID,Name")] ApiGroup apiGroup)
+    public async Task<IActionResult> Create([Bind("Id,Name")] ApiGroup apiGroup)
     {
         if (ModelState.IsValid)
             try
@@ -52,7 +52,7 @@ public class ApiGroupController : Controller
 
     // GET: Edit ApiGroup
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(Guid id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
         if (apiGroup == null) return NotFound();
@@ -61,9 +61,9 @@ public class ApiGroupController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("ID,Name")] ApiGroup apiGroup)
+    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name")] ApiGroup apiGroup)
     {
-        if (id != apiGroup.ID) return NotFound();
+        if (id != apiGroup.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
@@ -74,7 +74,7 @@ public class ApiGroupController : Controller
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ApiGroupExists(apiGroup.ID))
+                if (!ApiGroupExists(apiGroup.Id))
                     return NotFound();
                 throw;
             }
@@ -85,13 +85,13 @@ public class ApiGroupController : Controller
         return View(apiGroup);
     }
 
-    private bool ApiGroupExists(int id)
+    private bool ApiGroupExists(Guid id)
     {
-        return _context.ApiGroups.Any(e => e.ID == id);
+        return _context.ApiGroups.Any(e => e.Id == id);
     }
 
 
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(Guid id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
         if (apiGroup == null) return NotFound();
@@ -100,21 +100,15 @@ public class ApiGroupController : Controller
 
 
     // GET: Delete ApiGroup
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var apiGroup = await _context.ApiGroups
-            .Include(g => g.ApiEndpoints) // Include related ApiEndpoints
-            .FirstOrDefaultAsync(g => g.ID == id);
+            .Include(g => g.ApiEndpoints) 
+            .ThenInclude(ae => ae.ServiceStatus)
+            .FirstOrDefaultAsync(g => g.Id == id);
 
         if (apiGroup == null) return NotFound();
-
-        if (apiGroup.ApiEndpoints.Count > 0) // Check if there are associated endpoints
-        {
-            // Return a view with an error message, or however you want to inform the user
-            TempData["ErrorMessage"] =
-                "Can't delete this API Group because it has associated Endpoints. Please delete or reassign those Endpoints first.";
-            return RedirectToAction(nameof(Index)); // Return the same view with an error message
-        }
+        
 
         return PartialView("_DeleteConfirmation", apiGroup);
     }
@@ -122,11 +116,18 @@ public class ApiGroupController : Controller
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-        var apiGroup = await _context.ApiGroups.FindAsync(id);
+        var apiGroup = await _context.ApiGroups
+            .Include(g => g.ApiEndpoints)
+            .ThenInclude(ae => ae.ServiceStatus)
+            .FirstOrDefaultAsync(g => g.Id == id);
         if (apiGroup == null) return NotFound();
-
+        foreach (var apiEndpoint in apiGroup.ApiEndpoints)
+        {
+            _context.ApiEndpoints.Remove(apiEndpoint);
+            _context.ServiceStatuses.Remove(apiEndpoint.ServiceStatus);
+        }
         _context.ApiGroups.Remove(apiGroup);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));

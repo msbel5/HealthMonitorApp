@@ -1,27 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\msbel\\RiderProjects\\HealthMonitorApp\\HealthMonitorApp\\HealthMonitorApp.csproj": {}
+    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\msbel\\RiderProjects\\HealthMonitorApp\\HealthMonitorApp\\HealthMonitorApp.csproj": {
+    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\msbel\\RiderProjects\\HealthMonitorApp\\HealthMonitorApp\\HealthMonitorApp.csproj",
+        "projectUniqueName": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
         "projectName": "HealthMonitorApp",
-        "projectPath": "C:\\Users\\msbel\\RiderProjects\\HealthMonitorApp\\HealthMonitorApp\\HealthMonitorApp.csproj",
-        "packagesPath": "C:\\Users\\msbel\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\msbel\\RiderProjects\\HealthMonitorApp\\HealthMonitorApp\\obj\\",
+        "projectPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
+        "packagesPath": "/Users/macgyver/.nuget/packages/",
+        "outputPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\msbel\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/macgyver/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "https://www.nuget.org/api/v2": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
@@ -39,6 +38,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[7.0.9, )"
+            },
             "Emgu.CV": {
               "target": "Package",
               "version": "[4.8.1.5350, )"
@@ -121,7 +124,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.200-preview.23624.5/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

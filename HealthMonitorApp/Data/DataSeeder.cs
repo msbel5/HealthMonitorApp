@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Data;
@@ -35,7 +36,14 @@ public class DataSeeder(
 
         foreach (var apiGroupExt in apiGroups)
         {
-            var apiGroup = new ApiGroup { Name = apiGroupExt.Name.Replace("Controller", "") };
+            var isAuthorized  = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
+            var apiGroup = new ApiGroup 
+            {
+                Name = apiGroupExt.Name.Replace("Controller", "") ,
+                RepositoryAnalysisId = repositoryData.Id ,
+                IsAuthorized = isAuthorized,
+                Annotations = apiGroupExt.Annotations
+            };
             context.ApiGroups.Add(apiGroup);
             await context.SaveChangesAsync();
 
@@ -52,14 +60,19 @@ public class DataSeeder(
                 var serviceStatus = new ServiceStatus { Name = string.Concat(apiEndpointExt.Name, " ", httpMethod) };
                 context.ServiceStatuses.Add(serviceStatus);
                 await context.SaveChangesAsync();
-
+                
+                var isAuthorizedApiEndpoint = apiEndpointExt.IsAuthorized != null && apiEndpointExt.IsAuthorized.Value;
+                var isOpenApiEndpoint = apiEndpointExt.IsOpen != null && apiEndpointExt.IsOpen.Value;
                 var apiEndpoint = new ApiEndpoint
                 {
                     Name = string.Concat(apiEndpointExt.Name, " ", httpMethod),
                     cURL = await ConstructCurlCommand(apiGroupExt, apiEndpointExt, repositoryAnalysis),
                     ExpectedStatusCode = 200, // As mentioned, it's always 200
-                    ApiGroupID = apiGroup.ID,
-                    ServiceStatusID = serviceStatus.ID
+                    ApiGroupId = apiGroup.Id,
+                    ServiceStatusId = serviceStatus.Id,
+                    Annotations = apiEndpointExt.Annotations,
+                    IsAuthorized = isAuthorizedApiEndpoint,
+                    IsOpen = isOpenApiEndpoint
                 };
 
                 context.ApiEndpoints.Add(apiEndpoint);
@@ -97,13 +110,22 @@ public class DataSeeder(
         if (apiEndpoint.Annotations?.Contains("expectsJson") == true)
             commandBuilder.Append(" -H \"Content-Type: application/json\"");
 
+        var variables = await context.RepositoryAnalysisVariables
+            .Where(rav => rav.RepositoryAnalysisId == repositoryAnalysis.Id)
+            .ToListAsync();
+
+        
         // Include authorization token if available
-        if (!string.IsNullOrWhiteSpace(repositoryAnalysis.EncryptedVariables))
+        foreach (var rav in variables)
         {
-            var decryptedVariables = repositoryAnalysis.DecryptVariables();
-            var variables = JsonConvert.DeserializeObject<Dictionary<string, string>>(decryptedVariables);
-            if (variables != null && variables.TryGetValue("AuthToken", out var authToken))
-                commandBuilder.Append($" -H \"Authorization: Bearer {authToken}\"");
+            // Assuming context.Variables is properly set up to include Variables in your context
+            var variable = await context.Variables.FindAsync(rav.VariableId);
+            if (variable != null)
+            {
+                var decryptedValue = variable.DecryptVariable(); // Assuming this method exists and returns the decrypted value
+                // Append each variable as a header. Assuming variable.Name holds the header name.
+                commandBuilder.Append($" -H \"{variable.Name}: {decryptedValue}\"");
+            }
         }
 
         return commandBuilder.ToString();
@@ -146,7 +168,7 @@ public class DataSeeder(
                 Name = "Google",
                 cURL = "https://www.google.com",
                 ExpectedStatusCode = 200,
-                ApiGroupID = googleGroup.ID
+                ApiGroupId = googleGroup.Id
             }
         };
 
@@ -228,7 +250,7 @@ public class DataSeeder(
                 var apiGroup = context.ApiGroups.FirstOrDefault(ag => ag.Name == apiGroupName) ??
                                new ApiGroup { Name = apiGroupName };
 
-                if (apiGroup.ID == 0)
+                if (apiGroup.Id == Guid.Empty)
                 {
                     context.ApiGroups.Add(apiGroup);
                     await context.SaveChangesAsync();
@@ -250,8 +272,8 @@ public class DataSeeder(
                     Name = apiName,
                     cURL = curlCommand,
                     ExpectedStatusCode = 200,
-                    ApiGroupID = apiGroup.ID,
-                    ServiceStatusID = serviceStatus.ID
+                    ApiGroupId = apiGroup.Id,
+                    ServiceStatusId = serviceStatus.Id
                 };
 
                 context.ApiEndpoints.Add(apiEndpoint);

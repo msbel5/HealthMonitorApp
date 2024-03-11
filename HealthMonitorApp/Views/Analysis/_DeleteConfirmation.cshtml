@@ -6,6 +6,20 @@
 </div>
 <div class="modal-body">
     <p>Are you sure you want to delete the Repository: @Model.Name?</p>
+    <p>Deleting this Repository will also delete all the associated Api groups and EndPoints.</p>
+    <ul>
+        @foreach (var apiGroup in Model.ApiGroups)
+        {
+            <li>@apiGroup.Name
+                <ul>
+                    @foreach (var endPoint in apiGroup.ApiEndpoints)
+                    {
+                        <li>@endPoint.Name</li>
+                    }
+                </ul>
+            </li>
+        }
+    </ul>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

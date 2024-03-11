@@ -197,4 +197,5 @@ public class ApplicationInspectorService(RepositoryService repositoryService)
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "appinspector.exe" : "appinspector";
         return applicationInspector;
     }
+    
 }

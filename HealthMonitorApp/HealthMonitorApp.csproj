@@ -17,6 +17,7 @@
 
     <ItemGroup>
         <PackageReference Include="Emgu.CV" Version="4.8.1.5350"/>
+        <PackageReference Include="EPPlus" Version="7.0.9" />
         <PackageReference Include="Facebook" Version="7.0.6"/>
         <PackageReference Include="HtmlAgilityPack" Version="1.11.54"/>
         <PackageReference Include="itext7" Version="8.0.2"/>

@@ -4,10 +4,11 @@ namespace HealthMonitorApp.Models;
 
 public class RepositoryAnalysis
 {
-    private const string Report = "report.html";
+    private const string Report = "Report.html";
+    private const string Excel = "Report.xlsx";
 
 
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public string Name { get; set; }
     public string Url { get; set; }
@@ -24,10 +25,15 @@ public class RepositoryAnalysis
     public int NumberOfPublicEndpoints { get; set; } = 0; // Default value
 
     public string LatestCommitHash { get; set; } = string.Empty; // Default value
-
-    public string? EncryptedVariables { get; set; } // JSON
-
+    
+    public string? ExcludedControllers { get; set; }
+    
+    public string? ExcludedEndpoints { get; set; }
+    
     public ICollection<ApiGroup> ApiGroups { get; set; } = new List<ApiGroup>();
+
+    public ICollection<RepositoryAnalysisVariable>? RepositoryAnalysisVariables { get; set; } =
+        new List<RepositoryAnalysisVariable>();
 
 
     // You might want methods to encrypt/decrypt the username and password for storage
@@ -47,18 +53,6 @@ public class RepositoryAnalysis
         return (username, password);
     }
 
-    public void EncryptVariables(string Variables)
-    {
-        // Placeholder for encryption logic
-        EncryptedUsername = Encrypt(Variables);
-    }
-
-    public string DecryptVariables()
-    {
-        var variables = Decrypt(EncryptedUsername);
-        return variables;
-    }
-
     private string Encrypt(string input)
     {
         // Implement encryption logic here
@@ -74,5 +68,10 @@ public class RepositoryAnalysis
     public string GetReportPath()
     {
         return Path + "/" + Report;
+    }
+    
+    public string GetExcelPath()
+    {
+        return Path + "/" + Excel;
     }
 }

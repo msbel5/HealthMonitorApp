@@ -51,7 +51,7 @@ public class HealthMonitorController : Controller
         foreach (var service in services)
         {
             var historiesForService = _context.ServiceStatusHistories
-                .Where(h => h.ServiceStatusID == service.ID)
+                .Where(h => h.ServiceStatusId == service.Id)
                 .OrderByDescending(h => h.CheckedAt)
                 .ToList();
 
@@ -68,7 +68,7 @@ public class HealthMonitorController : Controller
 
             var viewModel = new ServiceStatusIndexViewModel
             {
-                ID = service.ID,
+                ID = service.Id,
                 Name = service.Name,
                 IsHealthy = service.IsHealthy,
                 ApiGroupName = service.ApiEndpoint?.ApiGroup?.Name ?? "Unknown", // Fallback to "Unknown" if null
@@ -167,8 +167,8 @@ public class HealthMonitorController : Controller
                 Name = ExtractApiName(model.cURL),
                 cURL = model.cURL,
                 ExpectedStatusCode = model.ExpectedStatusCode,
-                ApiGroupID = apiGroup.ID,
-                ServiceStatusID = serviceStatus.ID
+                ApiGroupId = apiGroup.Id,
+                ServiceStatusId = serviceStatus.Id
             };
 
             _context.ApiEndpoints.Add(apiEndpoint);
@@ -226,23 +226,23 @@ public class HealthMonitorController : Controller
     }
 
     // GET: HealthMonitor/Edit/5
-    public async Task<IActionResult> Edit(int? id)
+    public async Task<IActionResult> Edit(Guid? id)
     {
         if (id == null) return NotFound();
 
         var serviceStatus = await _context.ServiceStatuses
             .Include(s => s.ApiEndpoint)
-            .FirstOrDefaultAsync(s => s.ID == id.Value);
+            .FirstOrDefaultAsync(s => s.Id == id.Value);
 
         if (serviceStatus == null) return NotFound();
 
         var viewModel = new ServiceStatusEditViewModel
         {
-            ID = serviceStatus.ID,
+            ID = serviceStatus.Id,
             Name = serviceStatus.Name,
             ExpectedStatusCode = serviceStatus.ApiEndpoint.ExpectedStatusCode,
             CURL = serviceStatus.ApiEndpoint.cURL,
-            ApiGroupID = serviceStatus.ApiEndpoint.ApiGroupID,
+            ApiGroupID = serviceStatus.ApiEndpoint.ApiGroupId,
             ApiGroups = _context.ApiGroups.ToList(),
             AssertionScript = serviceStatus.AssertionScript
         };
@@ -254,15 +254,15 @@ public class HealthMonitorController : Controller
     // POST: HealthMonitor/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id,
-        [Bind("ID,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupID,NewApiGroupName,ApiGroups")]
+    public async Task<IActionResult> Edit(Guid id,
+        [Bind("Id,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupId,NewApiGroupName,ApiGroups")]
         ServiceStatusEditViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
             try
             {
-                if (viewModel.ApiGroupID == 0)
+                if (viewModel.ApiGroupID == Guid.Empty)
                 {
                     if (string.IsNullOrEmpty(viewModel.NewApiGroupName))
                     {
@@ -273,12 +273,12 @@ public class HealthMonitorController : Controller
                     var newApiGroup = new ApiGroup { Name = viewModel.NewApiGroupName };
                     _context.ApiGroups.Add(newApiGroup);
                     await _context.SaveChangesAsync();
-                    viewModel.ApiGroupID = newApiGroup.ID;
+                    viewModel.ApiGroupID = newApiGroup.Id;
                 }
 
-                // Assuming that the ID property of ServiceStatusEditViewModel is the ID of ServiceStatus
+                // Assuming that the Id property of ServiceStatusEditViewModel is the Id of ServiceStatus
                 var serviceStatus = await _context.ServiceStatuses.Include(s => s.ApiEndpoint)
-                    .FirstOrDefaultAsync(s => s.ID == viewModel.ID);
+                    .FirstOrDefaultAsync(s => s.Id == viewModel.ID);
 
                 if (serviceStatus == null) return NotFound();
 
@@ -286,7 +286,7 @@ public class HealthMonitorController : Controller
                 serviceStatus.Name = viewModel.Name;
                 serviceStatus.ApiEndpoint.ExpectedStatusCode = viewModel.ExpectedStatusCode;
                 serviceStatus.ApiEndpoint.cURL = viewModel.CURL;
-                serviceStatus.ApiEndpoint.ApiGroupID = viewModel.ApiGroupID;
+                serviceStatus.ApiEndpoint.ApiGroupId = viewModel.ApiGroupID;
                 if (viewModel.AssertionScript != null)
                 {
                     var scriptCheckResult =
@@ -312,18 +312,18 @@ public class HealthMonitorController : Controller
         return View(viewModel);
     }
 
-    private bool ServiceStatusExists(int id)
+    private bool ServiceStatusExists(Guid id)
     {
-        return _context.ServiceStatuses.Any(e => e.ID == id);
+        return _context.ServiceStatuses.Any(e => e.Id == id);
     }
 
 
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(Guid id)
     {
         var serviceStatus = await _context.ServiceStatuses
             .Include(s => s.ApiEndpoint)
             .ThenInclude(a => a.ApiGroup)
-            .FirstOrDefaultAsync(s => s.ID == id);
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (serviceStatus == null) return NotFound();
 
@@ -334,7 +334,7 @@ public class HealthMonitorController : Controller
     }
 
 
-    public IActionResult Delete(int id)
+    public IActionResult Delete(Guid id)
     {
         var serviceStatus = _context.ServiceStatuses.Find(id);
         if (serviceStatus == null) return NotFound();
@@ -344,17 +344,17 @@ public class HealthMonitorController : Controller
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
         var serviceStatus = await _context.ServiceStatuses.FindAsync(id);
         if (serviceStatus == null) return NotFound();
 
         // Find the associated ApiEndpoint
         var relatedEndpoint = _context.ApiEndpoints
-            .Include(apiEndpoint => apiEndpoint.ApiGroup).FirstOrDefault(e => e.ServiceStatusID == id);
+            .Include(apiEndpoint => apiEndpoint.ApiGroup).FirstOrDefault(e => e.ServiceStatusId == id);
 
         // Remove all related ServiceStatusHistories
-        var histories = _context.ServiceStatusHistories.Where(h => h.ServiceStatusID == serviceStatus.ID);
+        var histories = _context.ServiceStatusHistories.Where(h => h.ServiceStatusId == serviceStatus.Id);
         _context.ServiceStatusHistories.RemoveRange(histories);
 
         // Remove the ServiceStatus
@@ -368,7 +368,7 @@ public class HealthMonitorController : Controller
         // Check if the Auth and Group of the relatedEndpoint are orphaned and delete them if they are
         if (relatedEndpoint != null)
         {
-            var isGroupOrphaned = !_context.ApiEndpoints.Any(e => e.ApiGroupID == relatedEndpoint.ApiGroupID);
+            var isGroupOrphaned = !_context.ApiEndpoints.Any(e => e.ApiGroupId == relatedEndpoint.ApiGroupId);
 
             if (isGroupOrphaned && relatedEndpoint.ApiGroup != null)
                 _context.ApiGroups.Remove(relatedEndpoint.ApiGroup);

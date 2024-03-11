@@ -75,14 +75,14 @@
         <!-- Existing API Groups -->
         <div class="form-group">
             <label for="ExistingApiGroups">API Groups</label>
-            <select class="form-control" id="ExistingApiGroups" name="ApiGroupID">
+            <select class="form-control" id="ExistingApiGroups" name="ApiGroupId">
                 <option value="auto" selected>Auto Group</option>
                 <option value="addNew">Add New API Group</option>
                 @if (Model.ApiGroups != null)
                 {
                     @foreach (var group in Model.ApiGroups)
                     {
-                        <option value="@group.ID">@group.Name</option>
+                        <option value="@group.Id">@group.Name</option>
                     }
                 }
             </select>

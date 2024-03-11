@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OfficeOpenXml;
 
 namespace HealthMonitorApp.Services;
 
@@ -38,9 +39,14 @@ public class RepositoryService
         return await _dbContext.RepositoryAnalysis.ToListAsync();
     }
 
-    public async Task<RepositoryAnalysis?> GetRepositoryAnalysisByIdAsync(int id)
+    public async Task<RepositoryAnalysis?> GetRepositoryAnalysisByIdAsync(Guid id)
     {
-        return await _dbContext.RepositoryAnalysis.FindAsync(id);
+        return await _dbContext.RepositoryAnalysis
+            .Include(ra => ra.ApiGroups)
+            .ThenInclude(ag => ag.ApiEndpoints)
+            .ThenInclude(ae => ae.ServiceStatus)
+            .FirstOrDefaultAsync(g => g.Id == id);
+
     }
 
     public async Task SaveRepositoryAnalysisAsync(RepositoryAnalysis repositoryAnalysis)
@@ -112,10 +118,94 @@ public class RepositoryService
                 apiGroups.Add(apiGroup);
             }
         }
+        
+        var excludedControllers = repositoryAnalysis.ExcludedControllers?.Split(',');
+        if (excludedControllers != null)
+        {
+            apiGroups = apiGroups.Where(ag => !excludedControllers.Contains(ag.Name)).ToList();
+        }
+        
+        var excludedEndpoints = repositoryAnalysis.ExcludedEndpoints?.Split(',');
+        if (excludedEndpoints != null)
+        {
+            foreach (var group in apiGroups)
+            {
+                group.ApiEndpoints = group.ApiEndpoints.Where(ae => !excludedEndpoints.Contains(ae.Name)).ToList();
+            }
+        }
 
         var json = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
         return json;
     }
+    
+    public async Task CreateExcelFromRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
+{
+    var json = await ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
+    var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(json);
+    if (apiGroups == null) return;
+
+    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+    using var package = new ExcelPackage();
+    var worksheet = package.Workbook.Worksheets.Add("API Endpoints");
+
+    // Set up the headers
+    worksheet.Cells[1, 1].Value = "Controller Name";
+    worksheet.Cells[1, 2].Value = "Endpoint Name";
+    worksheet.Cells[1, 3].Value = "Needs Token";
+    worksheet.Cells[1, 4].Value = "Is Authorized";
+    worksheet.Cells[1, 5].Value = "Is Open";
+    worksheet.Cells[1, 6].Value = "Annotations";
+
+    int currentRow = 2;
+    foreach (var group in apiGroups)
+    {
+        foreach (var endpoint in group.ApiEndpoints)
+        {
+            var needToken = (endpoint.IsAuthorized ?? false) || !(endpoint.IsOpen ?? true);
+
+            worksheet.Cells[currentRow, 1].Value = group.Name;
+            worksheet.Cells[currentRow, 2].Value = endpoint.Name;
+            worksheet.Cells[currentRow, 3].Value = needToken ? "Yes" : "No";
+            worksheet.Cells[currentRow, 4].Value = endpoint.IsAuthorized == true ? "Yes" : "No";
+            worksheet.Cells[currentRow, 5].Value = endpoint.IsOpen == true ? "Yes" : "No";
+            worksheet.Cells[currentRow, 6].Value = endpoint.Annotations;
+            currentRow++;
+        }
+    }
+
+    // Convert range to table for sortable columns
+    var tableName = "ApiEndpointsTable";
+    var tableRange = worksheet.Cells[1, 1, currentRow - 1, 6];
+    var table = worksheet.Tables.Add(tableRange, tableName);
+    table.ShowHeader = true;
+    table.ShowFilter = true;
+    table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium2;
+
+    // Auto-fit columns
+    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+    // Apply conditional formatting for the entire row based on "Needs Token" column
+    for (int row = 2; row < currentRow; row++)
+    {
+        var rowRange = worksheet.Cells[row, 1, row, 6];
+        var condition = worksheet.ConditionalFormatting.AddExpression(rowRange);
+        condition.Formula = $"$C{row}=\"Yes\"";
+        condition.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+        var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes", StringComparison.OrdinalIgnoreCase) ;
+        condition.Style.Fill.BackgroundColor.Color = needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
+    }
+
+    // Save the Excel file
+    var filePath = repositoryAnalysis?.GetExcelPath();
+    if (filePath != null)
+    {
+        var fileInfo = new FileInfo(filePath);
+        await package.SaveAsAsync(fileInfo);
+    }
+}
+
+
+    
 
     private async Task<Compilation> CreateCompilationAsync(string[] filePaths)
     {

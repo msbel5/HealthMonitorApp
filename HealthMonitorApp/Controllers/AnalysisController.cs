@@ -3,6 +3,7 @@ using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HealthMonitorApp.Tools;
 using HealthMonitorApp.ViewModels;
+using iTextSharp.text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,6 +43,16 @@ public class AnalysisController : Controller
 
         return View("AnalysisResult", repositoryAnalysis);
     }
+    
+    
+
+    [HttpGet]
+    public IActionResult BaseMethod()
+    {
+        //this is a base method for testing excluding functions
+        throw new NotImplementedException();
+    }
+
 
 
     [HttpGet]
@@ -90,18 +101,24 @@ public class AnalysisController : Controller
                 Url = model.Url,
                 Branch = model.Branch ?? "master", // Default to 'master' if not specified
                 Path = repositoryDownloadPath,
-                BaseUrl = model.BaseUrl,
-                EncryptedVariables = model.Variables
+                BaseUrl = model.BaseUrl
             };
 
             if (model.Username != null && model.Password != null)
                 newRepositoryAnalysis.EncryptCredentials(model.Username, model.Password);
+            
+            if (model.ExcludedControllers != null && model.ExcludedControllers != null)
+                newRepositoryAnalysis.ExcludedControllers = model.ExcludedControllers;
+            
+            if (model.ExcludedMethods != null && model.ExcludedMethods != null)
+                newRepositoryAnalysis.ExcludedEndpoints = model.ExcludedMethods;
 
             await _vcsService.DownloadRepositoryAsync(newRepositoryAnalysis);
             newRepositoryAnalysis = await _inspectorService.AnalyzeRepositoryAsync(newRepositoryAnalysis);
             newRepositoryAnalysis = await _inspectorService.AnalyzeRepositoryForEndpointsAsync(newRepositoryAnalysis);
             await ApplicationInspectorService.GenerateReportAsync(newRepositoryAnalysis);
             await _reportHandler.ModifyAndSaveReport(newRepositoryAnalysis);
+            await _repositoryService.CreateExcelFromRepositoryAsync(newRepositoryAnalysis);
 
             _dbContext.RepositoryAnalysis.Add(newRepositoryAnalysis);
 
@@ -132,14 +149,14 @@ public class AnalysisController : Controller
     }
 
     // Displays details of a specific repository
-    public IActionResult Details(int id)
+    public IActionResult Details(Guid id)
     {
         var repository = _dbContext.RepositoryAnalysis.Find(id);
         return View(repository);
     }
 
     // Displays the form for editing a repository's details
-    public IActionResult Edit(int id)
+    public IActionResult Edit(Guid id)
     {
         // Fetch repository by id for editing
         var repository = _dbContext.RepositoryAnalysis.Find(id); // Replace with actual fetch logic
@@ -156,20 +173,12 @@ public class AnalysisController : Controller
     }
 
     // Displays confirmation for deleting a repository
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var repositoryAnalysis = await _dbContext.RepositoryAnalysis
-            .FirstOrDefaultAsync(g => g.Id == id);
+        var repositoryAnalysis = await _repositoryService.GetRepositoryAnalysisByIdAsync(id);
 
         if (repositoryAnalysis == null) return NotFound();
-
-        if (repositoryAnalysis.ApiGroups.Count > 0) // Check if there are associated endpoints
-        {
-            // Return a view with an error message, or however you want to inform the user
-            TempData["ErrorMessage"] =
-                "Can't delete this Repository because it has associated Endpoints. Please delete or reassign those Endpoints first.";
-            return RedirectToAction(nameof(Index)); // Return the same view with an error message
-        }
+        
 
         return PartialView("_DeleteConfirmation", repositoryAnalysis);
     }
@@ -177,19 +186,26 @@ public class AnalysisController : Controller
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-        var repositoryAnalysis = await _dbContext.RepositoryAnalysis.FindAsync(id);
+        var repositoryAnalysis = await _repositoryService.GetRepositoryAnalysisByIdAsync(id);
         if (repositoryAnalysis == null) return NotFound();
 
-        _dbContext.RepositoryAnalysis.Remove(repositoryAnalysis);
         await _vcsService.DeleteRepositoryAsync(repositoryAnalysis);
+        List<ApiGroup> apiGroups = repositoryAnalysis.ApiGroups.ToList();
+        List<ApiEndpoint> apiEndpoints = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints).ToList();
+        List<ServiceStatus> serviceStatuses = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints)
+            .Select(ae => ae.ServiceStatus).ToList();
+        _dbContext.RemoveRange(serviceStatuses);
+        _dbContext.RemoveRange(apiEndpoints);
+        _dbContext.RemoveRange(apiGroups);
+        _dbContext.RepositoryAnalysis.Remove(repositoryAnalysis);
         await _dbContext.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 
 
-    public IActionResult GetReport(int id)
+    public IActionResult GetReport(Guid id)
     {
         var repositoryAnalysis = _dbContext.RepositoryAnalysis.FirstOrDefault(ra => ra.Id == id);
         if (repositoryAnalysis == null) return NotFound();
@@ -198,4 +214,19 @@ public class AnalysisController : Controller
         var content = System.IO.File.ReadAllText(reportPath);
         return Content(content, "text/html");
     }
+    
+    public IActionResult GetReportExcel(Guid id)
+    {
+        var repositoryAnalysis = _dbContext.RepositoryAnalysis.FirstOrDefault(ra => ra.Id == id);
+        if (repositoryAnalysis == null) return NotFound();
+
+        var reportPath = repositoryAnalysis.GetExcelPath();
+
+        // Ensure the file exists
+        if (!System.IO.File.Exists(reportPath)) return NotFound("Report not found.");
+
+        var content = System.IO.File.ReadAllBytes(reportPath); // Read as byte array
+        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Path.GetFileName(reportPath)); 
+    }
+
 }

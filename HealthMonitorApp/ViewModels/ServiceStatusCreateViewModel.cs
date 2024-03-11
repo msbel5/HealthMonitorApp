@@ -23,4 +23,7 @@ public class ServiceStatusCreateViewModel
     public string? NewApiGroupName { get; set; }
 
     public List<ApiGroup>? ApiGroups { get; set; }
+    
+    public List<VariableViewModel> Variables { get; set; } = new List<VariableViewModel>();
+
 }

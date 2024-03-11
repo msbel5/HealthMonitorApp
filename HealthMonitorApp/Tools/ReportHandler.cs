@@ -2,6 +2,8 @@ using System.Text;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Tools;
@@ -57,57 +59,7 @@ public class ReportHandler(RepositoryService repositoryService)
         var navbarBrand = document.DocumentNode.SelectSingleNode("//span[@class='navbar-brand']");
         if (navbarBrand != null) navbarBrand.InnerHtml = repositoryName;
     }
-
-    private void AddEndpointSummaryOld(List<ApiGroup> apiGroups, HtmlDocument document)
-    {
-        var overviewSection = document.DocumentNode.SelectSingleNode("//div[@id='page__report_overview']");
-        if (overviewSection != null)
-        {
-            // Clear existing content
-            overviewSection.RemoveAllChildren();
-
-            var endpointOverview = new StringBuilder("<h2>Endpoint Summary</h2><ul>");
-
-            foreach (var apiGroup in apiGroups)
-            {
-                var controllerColor = apiGroup.IsAuthorized != null && apiGroup.IsAuthorized.Value ? "red" : "green";
-                endpointOverview.Append($"<li style='color:{controllerColor};'>{apiGroup.Name}</li><ul>");
-                // Check if Annotations is not empty and then append for API Group
-                if (apiGroup.Annotations != null && apiGroup.Annotations.Any())
-                {
-                    // Indent annotations for API Group
-                    var joinedControllerAnnotations = string.Join(", ", apiGroup.Annotations);
-                    endpointOverview.Append(
-                        $"<li style='margin-left: 20px; color:black;'>{joinedControllerAnnotations}</li>");
-                }
-
-                foreach (var endpoint in apiGroup.ApiEndpoints)
-                {
-                    var endpointColor = endpoint.IsOpen != null && endpoint.IsOpen.Value ? "green" : "red";
-                    endpointOverview.Append($"<li style='color:{endpointColor};'>{endpoint.Name}");
-                    // Check if Annotations is not empty and then append for Endpoint
-                    if (endpoint.Annotations != null && endpoint.Annotations.Any())
-                    {
-                        endpointOverview.Append("<ul>");
-                        // Indent annotations for Endpoint
-                        var joinedApiAnnotations = string.Join(", ", endpoint.Annotations);
-                        endpointOverview.Append(
-                            $"<li style='margin-left: 20px; color:black ;'>{joinedApiAnnotations}</li>");
-                        endpointOverview.Append("</ul>");
-                    }
-
-                    endpointOverview.Append("</li>"); // Close the endpoint list item
-                }
-
-                endpointOverview.Append("</ul></li>"); // Close the API group list and list item
-            }
-
-
-            endpointOverview.Append("</ul>");
-            overviewSection.InnerHtml = endpointOverview.ToString();
-        }
-    }
-
+    
 
     private void AddEndpointSummary(List<ApiGroup> apiGroups, HtmlDocument document)
     {
@@ -117,12 +69,12 @@ public class ReportHandler(RepositoryService repositoryService)
             overviewSection.RemoveAllChildren();
 
             var endpointOverview = new StringBuilder("<h2>Endpoint Summary</h2><div class='list-group'>");
-
+            
             foreach (var apiGroup in apiGroups)
             {
                 var controllerColor = apiGroup.IsAuthorized != null && apiGroup.IsAuthorized.Value
-                    ? "list-group-item-danger"
-                    : "list-group-item-success";
+                    ? "list-group-item-secondary"
+                    : "list-group-item-dark";
 
                 // Append annotations for API Group if any
                 if (apiGroup.Annotations != null && apiGroup.Annotations.Any())
@@ -140,8 +92,8 @@ public class ReportHandler(RepositoryService repositoryService)
                 foreach (var endpoint in apiGroup.ApiEndpoints)
                 {
                     var endpointColor = endpoint.IsOpen != null && endpoint.IsOpen.Value
-                        ? "list-group-item-success"
-                        : "list-group-item-danger";
+                        ? "list-group-item-danger"
+                        : "list-group-item-success";
 
                     // Append annotations for Endpoint if any
                     if (endpoint.Annotations != null && endpoint.Annotations.Any())

@@ -7,10 +7,17 @@
 </div>
 <div class="modal-body">
     <p>Are you sure you want to delete the API Group: @Model.Name?</p>
+    <p>Deleting this API Group will also delete all the associated EndPoints.</p>
+    <ul>
+        @foreach (var endPoint in Model.ApiEndpoints)
+        {
+            <li>@endPoint.Name</li>
+        }
+    </ul>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-    <form asp-action="Delete" asp-route-id="@Model.ID" method="post">
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
         <input type="submit" value="Delete" class="btn btn-danger"/>
     </form>
 </div>

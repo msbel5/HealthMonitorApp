@@ -31,7 +31,7 @@ public class HealthCheckService
 
         var endpoint = serviceStatus.ApiEndpoint;
         if (endpoint == null)
-            throw new InvalidOperationException($"No ApiEndpoint associated with ServiceStatus ID {serviceStatus.ID}.");
+            throw new InvalidOperationException($"No ApiEndpoint associated with ServiceStatus Id {serviceStatus.Id}.");
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -110,7 +110,7 @@ public class HealthCheckService
 
         var history = new ServiceStatusHistory
         {
-            ServiceStatusID = serviceStatus.ID,
+            ServiceStatusId = serviceStatus.Id,
             IsHealthy = serviceStatus.IsHealthy,
             CheckedAt = DateTime.Now,
             ResponseTime = serviceStatus.ResponseTime
@@ -191,8 +191,102 @@ public class HealthCheckService
         return response;
     }
 
-    private async Task<HttpResponseMessage> HandleCurlCommandAsync(ApiEndpoint endpoint)
+    private async Task<HttpResponseMessage> HandleCurlCommandAsync(ApiEndpoint apiEndpoint)
     {
+        var dynamicStringProcessor = new DynamicStringProcessor();
+        var rawCurlCmd = apiEndpoint.cURL.Replace("\\", string.Empty).Trim();
+
+        // Validate the script
+        if (!dynamicStringProcessor.ValidateScript(rawCurlCmd))
+            throw new InvalidOperationException("The script contains potentially harmful code.");
+
+        var cUrl = dynamicStringProcessor.Process(rawCurlCmd);
+        
+        var segments = ParseCurlCommand(cUrl);
+
+        var url = ExtractUrl(segments);
+        var method = DetermineHttpMethod(segments);
+        var headers = ExtractHeaders(segments);
+
+        var request = new HttpRequestMessage(method, url);
+
+        foreach (var header in headers)
+        {
+            request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
+        SetRequestBody(request, segments);
+
+        using var httpClient = new HttpClient();
+        return await httpClient.SendAsync(request);
+    }
+
+    private static string[] ParseCurlCommand(string cURL)
+    {
+        return Regex.Matches(cURL, @"[^\s""']+|""([^""]*)""|'([^']*)'")
+            .Cast<Match>()
+            .Select(m => m.Value.Trim('"').Trim('\''))
+            .ToArray();
+    }
+
+    private static string ExtractUrl(string[] segments)
+    {
+        var url = segments.FirstOrDefault(s => Uri.IsWellFormedUriString(s, UriKind.Absolute));
+        if (string.IsNullOrEmpty(url))
+        {
+            throw new InvalidOperationException("The cURL command does not contain a valid URL.");
+        }
+        return url;
+    }
+    
+    private static HttpMethod DetermineHttpMethod(string[] segments)
+    {
+        var methodIndex = Array.IndexOf(segments, "-X");
+        if (methodIndex != -1 && segments.Length > methodIndex + 1)
+        {
+            return new HttpMethod(segments[methodIndex + 1].ToUpper());
+        }
+        return HttpMethod.Get; // Default method if not specified
+    }
+
+ 
+    private static Dictionary<string, string> ExtractHeaders(string[] segments)
+    {
+        var headers = new Dictionary<string, string>();
+        for (int i = 0; i < segments.Length; i++)
+        {
+            if (segments[i] == "-H")
+            {
+                var headerParts = segments[i + 1].Split(new[] { ':' }, 2);
+                if (headerParts.Length == 2)
+                {
+                    headers.Add(headerParts[0], headerParts[1].Trim());
+                }
+                i++; // Skip the next segment since it's part of the current header
+            }
+        }
+        return headers;
+    }
+
+    
+    private static void SetRequestBody(HttpRequestMessage request, string[] segments)
+    {
+        var method = request.Method;
+        if (method == HttpMethod.Post || method == HttpMethod.Put || method == HttpMethod.Patch)
+        {
+            var dataSegmentIndex = Array.FindIndex(segments, s => s.StartsWith("--data") || s.StartsWith("--data-raw"));
+            if (dataSegmentIndex != -1 && segments.Length > dataSegmentIndex + 1)
+            {
+                var bodyContent = segments[dataSegmentIndex + 1];
+                request.Content = new StringContent(bodyContent, Encoding.UTF8, "application/json"); // Assuming JSON
+            }
+        }
+    }
+
+
+    private async Task<HttpResponseMessage> HandleCurlCommandAsyncNew(ApiEndpoint endpoint)
+    {
+        
         // Ensure the cURL command is correctly formatted without unnecessary escape characters
         var rawCurlCmd = endpoint.cURL.Replace("\\", string.Empty).Trim();
 
@@ -237,8 +331,7 @@ public class HealthCheckService
         // Log or handle the response as needed
         return response;
     }
-
-
+    
     private async Task<HttpResponseMessage> HandleCurlCommandAsyncOld(ApiEndpoint endpoint)
     {
         var dynamicStringProcessor = new DynamicStringProcessor();

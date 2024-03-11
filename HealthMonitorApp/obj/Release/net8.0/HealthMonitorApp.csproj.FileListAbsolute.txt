@@ -88,6 +88,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/HealthMonitorApp.pdb
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/BouncyCastle.Crypto.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Emgu.CV.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Facebook.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/HtmlAgilityPack.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Humanizer.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.barcodes.dll
@@ -208,6 +209,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.MvcApplicationPartsAssemblyInfo.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.RazorAssemblyInfo.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.RazorAssemblyInfo.cs
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.sourcelink.json
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/staticwebassets.build.json
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/staticwebassets.development.json
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/staticwebassets/msbuild.HealthMonitorApp.Microsoft.AspNetCore.StaticWebAssets.props
@@ -224,5 +226,11 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.pdb
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/ref/HealthMonitorApp.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Facebook.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.sourcelink.json
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.Interfaces.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.System.Drawing.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.IO.RecyclableMemoryStream.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.Win32.SystemEvents.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/System.Drawing.Common.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/Microsoft.Win32.SystemEvents.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/System.Drawing.Common.dll

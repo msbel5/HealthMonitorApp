@@ -39,7 +39,10 @@
         <dd class="col-sm-8">@Model.BaseUrl</dd>
 
     </dl>
-
+    <div align="center">
+        <a href='@Url.Action("GetReportExcel", "Analysis", new { id = Model.Id })' ><i class='fas fa-file-excel'></i> Download Summary as Excel</a>;
+    </div>
+    <br>
     <!-- Iframe to display the HTML report -->
     <div class="report-container" style="width:100%; height:600px;">
         <iframe src="@Url.Action("GetReport", "Analysis", new { id = Model.Id })" style="width:100%; height:100%;"  title="Detailed Report"></iframe>

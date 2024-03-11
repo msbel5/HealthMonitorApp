@@ -2,7 +2,7 @@ namespace HealthMonitorApp.Models;
 
 public class ServiceStatus
 {
-    public int ID { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
     public bool IsHealthy { get; set; }
     public DateTime CheckedAt { get; set; }
@@ -11,7 +11,7 @@ public class ServiceStatus
     public string? AssertionScript { get; set; }
 
     // Navigation properties
-    public int ApiEndpointID { get; set; }
+    public Guid ApiEndpointId { get; set; }
     public ApiEndpoint ApiEndpoint { get; set; }
     public ICollection<ServiceStatusHistory>? ServiceStatusHistories { get; set; }
 }

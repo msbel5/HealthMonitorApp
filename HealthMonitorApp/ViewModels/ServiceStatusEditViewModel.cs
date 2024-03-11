@@ -5,7 +5,7 @@ namespace HealthMonitorApp.ViewModels;
 
 public class ServiceStatusEditViewModel
 {
-    public int ID { get; set; }
+    public Guid ID { get; set; }
 
     [Required]
     [StringLength(100, ErrorMessage = "Name must be under 100 characters.")]
@@ -21,7 +21,10 @@ public class ServiceStatusEditViewModel
     public string CURL { get; set; }
 
     public string? AssertionScript { get; set; }
-    public int? ApiGroupID { get; set; }
+    public Guid? ApiGroupID { get; set; }
     public string? NewApiGroupName { get; set; }
     public List<ApiGroup>? ApiGroups { get; set; }
+    
+    public List<VariableViewModel> Variables { get; set; } = new List<VariableViewModel>();
+
 }
