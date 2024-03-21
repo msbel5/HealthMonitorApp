@@ -48,7 +48,20 @@ public class HealthCheckService
             foreach (var curlCommand in curlCommands)
             {
                 var modifiedEndpoint = new ApiEndpoint
-                    { cURL = curlCommand, ExpectedStatusCode = endpoint.ExpectedStatusCode };
+                {
+                    cURL = curlCommand,
+                    ExpectedStatusCode = endpoint.ExpectedStatusCode,
+                    Id = endpoint.Id,
+                    IsAuthorized = endpoint.IsAuthorized,
+                    IsOpen = endpoint.IsOpen,
+                    Name = endpoint.Name,
+                    ServiceStatusId = endpoint.ServiceStatusId,
+                    ApiGroupId = endpoint.ApiGroupId,
+                    Annotations = endpoint.Annotations,
+                    ApiEndpointVariables = endpoint.ApiEndpointVariables,
+                    ApiGroup = endpoint.ApiGroup,
+                    ServiceStatus = endpoint.ServiceStatus,
+                };
                 HttpResponseMessage response;
 
                 if (IsCurlCommand(modifiedEndpoint.cURL))
@@ -160,8 +173,17 @@ public class HealthCheckService
 
     private async Task<HttpResponseMessage> HandleLiteralUrlAsync(ApiEndpoint apiEndpoint)
     {
+        
+        var dynamicStringProcessor = new DynamicStringProcessor(_context);
+        apiEndpoint.cURL = apiEndpoint.cURL.Replace("\\", string.Empty).Trim();
+        var serviceStatus = _context.ServiceStatuses.FirstOrDefault(ss => ss.ApiEndpointId == apiEndpoint.Id);
+        // Validate the script
+        if (serviceStatus != null && !dynamicStringProcessor.ValidateJavaScript(serviceStatus))
+            throw new InvalidOperationException("The script contains potentially harmful code.");
+
+        var cUrl = dynamicStringProcessor.Process(apiEndpoint);
         using var httpClient = new HttpClient();
-        var response = await httpClient.GetAsync(apiEndpoint.cURL);
+        var response = await httpClient.GetAsync(cUrl);
 
         // Ensure the response is successful
         response.EnsureSuccessStatusCode();
@@ -193,14 +215,14 @@ public class HealthCheckService
 
     private async Task<HttpResponseMessage> HandleCurlCommandAsync(ApiEndpoint apiEndpoint)
     {
-        var dynamicStringProcessor = new DynamicStringProcessor();
-        var rawCurlCmd = apiEndpoint.cURL.Replace("\\", string.Empty).Trim();
-
+        var dynamicStringProcessor = new DynamicStringProcessor(_context);
+        apiEndpoint.cURL = apiEndpoint.cURL.Replace("\\", string.Empty).Trim();
+        var serviceStatus = _context.ServiceStatuses.FirstOrDefault(ss => ss.ApiEndpointId == apiEndpoint.Id);
         // Validate the script
-        if (!dynamicStringProcessor.ValidateScript(rawCurlCmd))
+        if (serviceStatus != null && !dynamicStringProcessor.ValidateJavaScript(serviceStatus))
             throw new InvalidOperationException("The script contains potentially harmful code.");
 
-        var cUrl = dynamicStringProcessor.Process(rawCurlCmd);
+        var cUrl = dynamicStringProcessor.Process(apiEndpoint);
         
         var segments = ParseCurlCommand(cUrl);
 
@@ -281,136 +303,9 @@ public class HealthCheckService
                 request.Content = new StringContent(bodyContent, Encoding.UTF8, "application/json"); // Assuming JSON
             }
         }
-    }
-
-
-    private async Task<HttpResponseMessage> HandleCurlCommandAsyncNew(ApiEndpoint endpoint)
-    {
         
-        // Ensure the cURL command is correctly formatted without unnecessary escape characters
-        var rawCurlCmd = endpoint.cURL.Replace("\\", string.Empty).Trim();
 
-        // Extract URL from the cURL command, supporting ', ", and `
-        var urlMatch = Regex.Match(rawCurlCmd, @"(?:^|\s)(?:'|""|`)(https?:\/\/[^\s'""`]+)(?:'|""|`)");
-        if (!urlMatch.Success)
-            throw new InvalidOperationException("The cURL command does not contain a valid URL.");
-        var url = urlMatch.Groups[1].Value;
-
-        // Extract HTTP method, default to GET if not specified
-        var methodMatch = Regex.Match(rawCurlCmd, @"-X\s+(\w+)");
-        var method = methodMatch.Success ? new HttpMethod(methodMatch.Groups[1].Value.ToUpper()) : HttpMethod.Get;
-
-        // Initialize the HttpRequestMessage
-        var request = new HttpRequestMessage(method, url);
-
-        // Extract headers, accommodating different quote styles
-        var headerMatches = Regex.Matches(rawCurlCmd, @"-H\s+(?:'|""|`)([^:]+):\s*([^'""`]+)(?:'|""|`)");
-        foreach (Match match in headerMatches)
-        {
-            var headerName = match.Groups[1].Value;
-            var headerValue = match.Groups[2].Value;
-            request.Headers.TryAddWithoutValidation(headerName, headerValue);
-        }
-
-        // Extract request body for POST, PUT, PATCH methods, considering different quote styles
-        if (method == HttpMethod.Post || method == HttpMethod.Put || method == HttpMethod.Patch)
-        {
-            var bodyMatch = Regex.Match(rawCurlCmd,
-                @"--data-raw\s+(?:'|""|`)([^'""`]*)(?:'|""|`)|--data\s+(?:'|""|`)([^'""`]*)(?:'|""|`)");
-            if (bodyMatch.Success)
-            {
-                var requestBody = bodyMatch.Groups[1].Success ? bodyMatch.Groups[1].Value : bodyMatch.Groups[2].Value;
-                request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-            }
-        }
-
-        // Execute the request
-        using var httpClient = new HttpClient();
-        var response = await httpClient.SendAsync(request);
-
-        // Log or handle the response as needed
-        return response;
+        
     }
     
-    private async Task<HttpResponseMessage> HandleCurlCommandAsyncOld(ApiEndpoint endpoint)
-    {
-        var dynamicStringProcessor = new DynamicStringProcessor();
-        var rawCurlCmd = endpoint.cURL.Replace("\\", string.Empty).Trim();
-
-        // Validate the script
-        if (!dynamicStringProcessor.ValidateScript(rawCurlCmd))
-            throw new InvalidOperationException("The script contains potentially harmful code.");
-
-        var curlCmd = dynamicStringProcessor.Process(rawCurlCmd);
-
-        if (string.IsNullOrEmpty(curlCmd))
-            throw new ArgumentNullException(nameof(curlCmd), "cURL command cannot be null or empty.");
-
-        // Extracting URL
-        var urlMatch = Regex.Match(curlCmd, @"'(https?:\/\/[^\s]*)'");
-        if (!urlMatch.Success) throw new InvalidOperationException("The cURL command does not contain a valid URL.");
-
-        var url = urlMatch.Groups[1].Value;
-
-        // Extracting method
-        var methodMatch = Regex.Match(curlCmd, @"-X\s+(\w+)|--request\s+'(\w+)'");
-        var method = HttpMethod.Get; // Default to GET
-
-        if (methodMatch.Success)
-        {
-            method = new HttpMethod(methodMatch.Groups.Cast<Group>().Skip(1).First(g => g.Success).Value);
-        }
-        else
-        {
-            // Check if there is data, if so, then it's probably a POST request
-            var postDataMatch = Regex.Match(curlCmd, @"--data-raw\s+'([^']+)'|--data\s+'([^']+)'");
-            if (postDataMatch.Success) method = HttpMethod.Post;
-        }
-
-
-        // Creating HTTP request
-        var request = new HttpRequestMessage(method, url);
-
-        // Extracting headers
-        var headerMatches = Regex.Matches(curlCmd, @"-H\s+'([^']+)'|--header\s+'([^']+)'");
-        var hasContentTypeJson = false;
-        var hasAcceptHeader = false;
-        var hasConnectionHeader = false;
-        foreach (Match headerMatch in headerMatches)
-        {
-            var headerString = headerMatch.Groups.Cast<Group>().Skip(1).First(g => g.Success).Value;
-            var headerParts = headerString.Split(new[] { ": " }, StringSplitOptions.RemoveEmptyEntries);
-            if (headerParts.Length == 2)
-            {
-                request.Headers.TryAddWithoutValidation(headerParts[0], headerParts[1]);
-
-                if (headerParts[0].Equals("Content-Type", StringComparison.OrdinalIgnoreCase) &&
-                    headerParts[1].Contains("application/json", StringComparison.OrdinalIgnoreCase))
-                    hasContentTypeJson = true;
-                if (headerParts[0].Equals("Accept", StringComparison.OrdinalIgnoreCase)) hasAcceptHeader = true;
-                if (headerParts[0].Equals("Connection", StringComparison.OrdinalIgnoreCase)) hasConnectionHeader = true;
-            }
-        }
-
-
-        // Auto-add headers if necessary
-        if (hasContentTypeJson && !hasAcceptHeader && !request.Headers.Contains("Accept"))
-            request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-        if (method == HttpMethod.Post && hasContentTypeJson && !hasConnectionHeader &&
-            !request.Headers.Contains("Connection")) request.Headers.Connection.Add("keep-alive");
-
-
-        // Extracting body
-        var bodyMatch = Regex.Match(curlCmd, @"--data-raw\s+'([^']+)'|--data\s+'([^']+)'");
-        if (bodyMatch.Success)
-        {
-            var bodyString = bodyMatch.Groups.Cast<Group>().Skip(1).First(g => g.Success).Value;
-            request.Content = new StringContent(bodyString, Encoding.UTF8, "application/json");
-        }
-
-        // Sending HTTP request
-        using var httpClient = new HttpClient();
-        return await httpClient.SendAsync(request);
-    }
 }

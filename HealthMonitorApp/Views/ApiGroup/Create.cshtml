@@ -1,19 +1,50 @@
-@model ApiGroup
+@model HealthMonitorApp.ViewModels.ApiGroupViewModel
 
 @{
     ViewBag.Title = "Create API Group";
     Layout = "_Layout";
 }
 
-<h2>Create API Group</h2>
+<style>
+    .form-group {
+        display: flex;
+        align-items: flex-end; /* Align items to the bottom */
+        flex-wrap: wrap;
+        gap: 10px; /* Adds a gap between items */
+    }
+    .variable-group {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Adds a gap between inputs and buttons within each variable group */
+    }
+    .variable-group > * {
+        flex: 1; /* Allows inputs and button to equally share the container width */
+    }
+    #addVariableButton, .removeVariableButton {
+        flex-grow: 0; /* Prevents buttons from growing */
+    }
+    #variablesTitle {
+        display: none; /* Initially hide the Variables title */
+    }
+</style>
 
-<form asp-action="Create">
+<form asp-action="Create" id="apiGroupForm" style="max-width: 500px; margin: auto;">
+    <h2 style="text-align: center;">Create API Group</h2>
+
     <div class="form-group">
-        <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control"/>
-        <span asp-validation-for="Name" class="text-danger"></span>
+        <div class="flex-grow-1">
+            <input asp-for="ApiGroup.Name" class="form-control" placeholder="Name"/>
+            <span asp-validation-for="ApiGroup.Name" class="text-danger"></span>
+        </div>
+        <button type="button" id="addVariableButton" class="btn btn-secondary">Add Variable</button>
     </div>
-    <div class="form-group">
+
+    <h3 id="variablesTitle" style="text-align: center;">Variables</h3>
+    <div id="variablesContainer">
+        <!-- Variable inputs will be added here -->
+    </div>
+
+    <div class="form-group mt-3">
         <input type="submit" value="Create" class="btn btn-primary"/>
     </div>
 </form>
@@ -24,4 +55,35 @@
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const variablesContainer = document.getElementById('variablesContainer');
+            const addVariableButton = document.getElementById('addVariableButton');
+            const variablesTitle = document.getElementById('variablesTitle');
+
+            function updateVariablesTitleVisibility() {
+                variablesTitle.style.display = variablesContainer.children.length > 0 ? 'block' : 'none';
+            }
+
+            addVariableButton.addEventListener('click', function () {
+                const variableIndex = variablesContainer.children.length;
+                const variableDiv = document.createElement('div');
+                variableDiv.className = 'variable-group d-flex align-items-center mb-2';
+                variableDiv.innerHTML = `
+                    <input type="text" name="Variables[${variableIndex}].Name" class="form-control" placeholder="Name" /> = 
+                    <input type="text" name="Variables[${variableIndex}].Value" class="form-control ml-2" placeholder="Value" />
+                    <button type="button" class="removeVariableButton btn btn-danger ml-2">-</button>
+                `;
+
+                variablesContainer.appendChild(variableDiv);
+
+                variableDiv.querySelector('.removeVariableButton').addEventListener('click', function () {
+                    variableDiv.remove();
+                    updateVariablesTitleVisibility();
+                });
+
+                updateVariablesTitleVisibility();
+            });
+        });
+    </script>
 }

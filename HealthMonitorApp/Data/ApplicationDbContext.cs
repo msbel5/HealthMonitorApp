@@ -23,7 +23,7 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
+        
         // ServiceStatus to ApiEndpoint (One-to-One)
         modelBuilder.Entity<ServiceStatus>()
             .HasOne(ss => ss.ApiEndpoint)
@@ -85,6 +85,9 @@ public class ApplicationDbContext : DbContext
             .WithMany(v => v.RepositoryAnalysisVariables)
             .HasForeignKey(rav => rav.VariableId);
 
+        
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        optionsBuilder.EnableSensitiveDataLogging();
 
     }
 }

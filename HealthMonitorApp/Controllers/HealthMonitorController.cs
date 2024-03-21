@@ -126,7 +126,7 @@ public class HealthMonitorController : Controller
                 apiGroup = new ApiGroup { Name = model.NewApiGroupName };
                 _context.ApiGroups.Add(apiGroup);
             }
-            else if (int.TryParse(model.ApiGroupId, out var groupId))
+            else if (Guid.TryParse(model.ApiGroupId, out var groupId))
             {
                 apiGroup = await _context.ApiGroups.FindAsync(groupId);
             }
@@ -328,8 +328,8 @@ public class HealthMonitorController : Controller
         if (serviceStatus == null) return NotFound();
 
         ViewBag.ApiGroups = await _context.ApiGroups.ToListAsync();
-        var dynamicStringProcessor = new DynamicStringProcessor();
-        serviceStatus.ApiEndpoint.cURL = dynamicStringProcessor.Process(serviceStatus.ApiEndpoint.cURL);
+        var dynamicStringProcessor = new DynamicStringProcessor(_context);
+        serviceStatus.ApiEndpoint.cURL = dynamicStringProcessor.Process(serviceStatus.ApiEndpoint);
         return View(serviceStatus);
     }
 

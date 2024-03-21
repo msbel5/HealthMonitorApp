@@ -88,6 +88,9 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/HealthMonitorApp.pdb
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/BouncyCastle.Crypto.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Emgu.CV.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.Interfaces.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.System.Drawing.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Facebook.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/HtmlAgilityPack.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Humanizer.dll
@@ -98,6 +101,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.kernel.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.layout.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.pdfa.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.pdfua.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.sign.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.styledxmlparser.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/itext.svg.dll
@@ -116,6 +120,8 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.EntityFrameworkCore.Relational.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.EntityFrameworkCore.Sqlite.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.Extensions.DependencyModel.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.IO.RecyclableMemoryStream.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.Win32.SystemEvents.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Mono.TextTemplating.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Newtonsoft.Json.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/SendGrid.dll
@@ -125,6 +131,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/StarkbankEcdsa.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/System.CodeDom.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/System.Drawing.Common.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Tesseract.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/cs/Microsoft.CodeAnalysis.resources.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/de/Microsoft.CodeAnalysis.resources.dll
@@ -178,6 +185,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/tr/Microsoft.CodeAnalysis.Scripting.resources.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/zh-Hans/Microsoft.CodeAnalysis.Scripting.resources.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/zh-Hant/Microsoft.CodeAnalysis.Scripting.resources.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/Microsoft.Win32.SystemEvents.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/alpine-arm/native/libe_sqlite3.so
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/alpine-arm64/native/libe_sqlite3.so
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/alpine-x64/native/libe_sqlite3.so
@@ -201,6 +209,7 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win-arm64/native/e_sqlite3.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win-x64/native/e_sqlite3.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win-x86/native/e_sqlite3.dll
+/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/System.Drawing.Common.dll
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.csproj.AssemblyReference.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.GeneratedMSBuildEditorConfig.editorconfig
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.AssemblyInfoInputs.cache
@@ -226,11 +235,3 @@
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.pdb
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/Release/net8.0/ref/HealthMonitorApp.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.Interfaces.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/EPPlus.System.Drawing.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.IO.RecyclableMemoryStream.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/Microsoft.Win32.SystemEvents.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/System.Drawing.Common.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/Microsoft.Win32.SystemEvents.dll
-/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/bin/Release/net8.0/runtimes/win/lib/net7.0/System.Drawing.Common.dll

@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Newtonsoft.Json;
+using SixLabors.ImageSharp;
 using Tesseract;
 
 namespace HealthMonitorApp.Services;
@@ -139,4 +140,6 @@ public class AssertionService
     {
         public HttpResponseMessage response { get; set; }
     }
+    
+    
 }

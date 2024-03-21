@@ -14,8 +14,6 @@ public class ServiceStatusCreateViewModel
     public int ExpectedStatusCode { get; set; }
 
     [Required]
-    [RegularExpression(@"^(https?:\/\/.+|curl\s+.+)$",
-        ErrorMessage = "The cURL field must be a valid URL or cURL command.")]
     public string cURL { get; set; }
 
     public string? AssertionScript { get; set; }

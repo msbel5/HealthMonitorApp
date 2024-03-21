@@ -118,25 +118,34 @@ public class RepositoryService
                 apiGroups.Add(apiGroup);
             }
         }
-        
-        var excludedControllers = repositoryAnalysis.ExcludedControllers?.Split(',');
+        var excludedControllers = repositoryAnalysis.ExcludedControllers;
+        List<string> excludedControllersList = new List<string>();
         if (excludedControllers != null)
         {
-            apiGroups = apiGroups.Where(ag => !excludedControllers.Contains(ag.Name)).ToList();
+            excludedControllersList = excludedControllers.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .ToList();
         }
-        
-        var excludedEndpoints = repositoryAnalysis.ExcludedEndpoints?.Split(',');
+        apiGroups =  apiGroups.Where(c => !excludedControllersList.Any(ec => c.Name.Contains(ec, StringComparison.OrdinalIgnoreCase))).ToList();
+            
+        var excludedEndpoints = repositoryAnalysis.ExcludedEndpoints;
+        List<string> excludedEndpointsList = new List<string>();
         if (excludedEndpoints != null)
         {
-            foreach (var group in apiGroups)
-            {
-                group.ApiEndpoints = group.ApiEndpoints.Where(ae => !excludedEndpoints.Contains(ae.Name)).ToList();
-            }
+            excludedEndpointsList = excludedEndpoints.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .ToList();
         }
+        foreach (var apiGroup in apiGroups)
+        {
+            apiGroup.ApiEndpoints = apiGroup.ApiEndpoints.Where(e => !excludedEndpointsList.Any(ee => e.Name.Contains(ee, StringComparison.OrdinalIgnoreCase))).ToList();
+        }
+        
 
         var json = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
         return json;
     }
+
     
     public async Task CreateExcelFromRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
 {

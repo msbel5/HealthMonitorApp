@@ -132,29 +132,30 @@ public class ApplicationInspectorService(RepositoryService repositoryService)
         return repositoryAnalysis;
     }
 
-    public async Task<RepositoryAnalysis?> AnalyzeRepositoryForEndpointsAsync(RepositoryAnalysis? repositoryAnalysis)
-    {
-        // First, generate the JSON summary of controllers and endpoints
-        var jsonSummary = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
+        public async Task<RepositoryAnalysis?> AnalyzeRepositoryForEndpointsAsync(RepositoryAnalysis? repositoryAnalysis)
+        {
+            // First, generate the JSON summary of controllers and endpoints
+            var jsonSummary = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
+            //excluded controllers and apienpoints
+            
+            // Deserialize the JSON summary back into a list of ControllerInfo objects
+            var controllersInfo = JsonConvert.DeserializeObject<List<ApiGroup>>(jsonSummary);
 
-        // Deserialize the JSON summary back into a list of ControllerInfo objects
-        var controllersInfo = JsonConvert.DeserializeObject<List<ApiGroup>>(jsonSummary);
+            // Use the deserialized list to populate the repositoryAnalysis object
+            var totalControllers = controllersInfo.Count;
+            var totalEndpoints = controllersInfo.Sum(c => c.ApiEndpoints.Count);
+            var totalPublicEndpoints =
+                controllersInfo.Sum(c => c.ApiEndpoints.Count(e => e.IsOpen != null && e.IsOpen.Value));
 
-        // Use the deserialized list to populate the repositoryAnalysis object
-        var totalControllers = controllersInfo.Count;
-        var totalEndpoints = controllersInfo.Sum(c => c.ApiEndpoints.Count);
-        var totalPublicEndpoints =
-            controllersInfo.Sum(c => c.ApiEndpoints.Count(e => e.IsOpen != null && e.IsOpen.Value));
+            // Optional: Populate other analysis details as needed
+            repositoryAnalysis.NumberOfControllers = totalControllers;
+            repositoryAnalysis.NumberOfEndpoints = totalEndpoints;
+            repositoryAnalysis.NumberOfPublicEndpoints = totalPublicEndpoints;
 
-        // Optional: Populate other analysis details as needed
-        repositoryAnalysis.NumberOfControllers = totalControllers;
-        repositoryAnalysis.NumberOfEndpoints = totalEndpoints;
-        repositoryAnalysis.NumberOfPublicEndpoints = totalPublicEndpoints;
+            // Further processing if needed
 
-        // Further processing if needed
-
-        return repositoryAnalysis;
-    }
+            return repositoryAnalysis;
+        }
 
 
     public static async Task GenerateReportAsync(RepositoryAnalysis? repositoryAnalysis)

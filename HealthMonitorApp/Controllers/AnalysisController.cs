@@ -107,10 +107,10 @@ public class AnalysisController : Controller
             if (model.Username != null && model.Password != null)
                 newRepositoryAnalysis.EncryptCredentials(model.Username, model.Password);
             
-            if (model.ExcludedControllers != null && model.ExcludedControllers != null)
+            if (model.ExcludedControllers != null)
                 newRepositoryAnalysis.ExcludedControllers = model.ExcludedControllers;
             
-            if (model.ExcludedMethods != null && model.ExcludedMethods != null)
+            if (model.ExcludedMethods != null)
                 newRepositoryAnalysis.ExcludedEndpoints = model.ExcludedMethods;
 
             await _vcsService.DownloadRepositoryAsync(newRepositoryAnalysis);

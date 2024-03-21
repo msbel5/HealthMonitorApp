@@ -36,11 +36,11 @@ public class DataSeeder(
 
         foreach (var apiGroupExt in apiGroups)
         {
-            var isAuthorized  = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
-            var apiGroup = new ApiGroup 
+            var isAuthorized = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
+            var apiGroup = new ApiGroup
             {
-                Name = apiGroupExt.Name.Replace("Controller", "") ,
-                RepositoryAnalysisId = repositoryData.Id ,
+                Name = apiGroupExt.Name.Replace("Controller", ""),
+                RepositoryAnalysisId = repositoryData.Id,
                 IsAuthorized = isAuthorized,
                 Annotations = apiGroupExt.Annotations
             };
@@ -52,7 +52,7 @@ public class DataSeeder(
                 var annotationList =
                     apiEndpointExt.Annotations?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 var httpMethodAnnotation = annotationList.FirstOrDefault(a => a.StartsWith("Http"));
-                string httpMethod = null;
+                var httpMethod = string.Empty;
                 if (httpMethodAnnotation != null)
                     // Extract just the HTTP method part (e.g., "HttpPost" becomes "POST")
                     httpMethod = httpMethodAnnotation.Replace("Http", "");
@@ -60,7 +60,7 @@ public class DataSeeder(
                 var serviceStatus = new ServiceStatus { Name = string.Concat(apiEndpointExt.Name, " ", httpMethod) };
                 context.ServiceStatuses.Add(serviceStatus);
                 await context.SaveChangesAsync();
-                
+
                 var isAuthorizedApiEndpoint = apiEndpointExt.IsAuthorized != null && apiEndpointExt.IsAuthorized.Value;
                 var isOpenApiEndpoint = apiEndpointExt.IsOpen != null && apiEndpointExt.IsOpen.Value;
                 var apiEndpoint = new ApiEndpoint
@@ -114,7 +114,7 @@ public class DataSeeder(
             .Where(rav => rav.RepositoryAnalysisId == repositoryAnalysis.Id)
             .ToListAsync();
 
-        
+
         // Include authorization token if available
         foreach (var rav in variables)
         {
@@ -122,7 +122,8 @@ public class DataSeeder(
             var variable = await context.Variables.FindAsync(rav.VariableId);
             if (variable != null)
             {
-                var decryptedValue = variable.DecryptVariable(); // Assuming this method exists and returns the decrypted value
+                var decryptedValue =
+                    variable.DecryptVariable(); // Assuming this method exists and returns the decrypted value
                 // Append each variable as a header. Assuming variable.Name holds the header name.
                 commandBuilder.Append($" -H \"{variable.Name}: {decryptedValue}\"");
             }

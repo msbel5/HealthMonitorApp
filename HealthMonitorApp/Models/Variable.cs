@@ -14,25 +14,25 @@ public class Variable
     public ICollection<ApiGroupVariable> ApiGroupVariables { get; set; } = new List<ApiGroupVariable>();
     public ICollection<RepositoryAnalysisVariable> RepositoryAnalysisVariables { get; set; } = new List<RepositoryAnalysisVariable>();
     
-    public void EncryptVariables(string Value)
+    public static string EncryptVariable(string Value)
     {
         // Placeholder for encryption logic
-        Value = Encrypt(Value);
+        return Encrypt(Value);
     }
 
-    public string DecryptVariable()
+    public  string DecryptVariable()
     {
         var variables = Decrypt(Value);
         return variables;
     }
 
-    private string Encrypt(string input)
+    private static string Encrypt(string input)
     {
         // Implement encryption logic here
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(input));
     }
 
-    private string Decrypt(string encryptedInput)
+    private static string Decrypt(string encryptedInput)
     {
         // Implement decryption logic here
         return Encoding.UTF8.GetString(Convert.FromBase64String(encryptedInput));
