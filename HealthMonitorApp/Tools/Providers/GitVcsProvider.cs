@@ -75,6 +75,7 @@ public class GitVcsProvider : IVcsProvider
         };
         process.Start();
         await process.WaitForExitAsync();
+        await CheckCommitHashAsync(repositoryAnalysis);
     }
 
     public async Task DeleteRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
@@ -86,6 +87,17 @@ public class GitVcsProvider : IVcsProvider
 
 
     public async Task UpdateRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
+    {
+        if (repositoryAnalysis == null)
+            throw new ArgumentNullException(nameof(repositoryAnalysis));
+    
+        // The repository is not up to date, delete and re-clone it
+        await DeleteRepositoryAsync(repositoryAnalysis);
+        await DownloadRepositoryAsync(repositoryAnalysis);
+        
+    }
+    
+    public async Task UpdateRepositoryAsyncOld(RepositoryAnalysis? repositoryAnalysis)
     {
         var username = string.Empty;
         var password = string.Empty;

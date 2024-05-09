@@ -398,3 +398,4 @@
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.pdb
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Release/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Release/net8.0/ref/HealthMonitorApp.dll
+/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/bin/Release/net8.0/backupOutput.json
