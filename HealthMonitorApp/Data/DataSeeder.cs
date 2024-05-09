@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
+using HealthMonitorApp.Tools;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -19,7 +20,7 @@ public class DataSeeder(
         return Task.CompletedTask;
     }
 
-
+    
     public async Task SeedDataFromRepository(RepositoryAnalysis repositoryAnalysis)
     {
         var repositoryData = await repositoryService.GetRepositoryAnalysisByUrlAsync(repositoryAnalysis.Url);
@@ -28,12 +29,13 @@ public class DataSeeder(
             logger.LogError("Failed to retrieve repository data");
             return;
         }
-
         var apiGroupsJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryData);
         var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(apiGroupsJson);
 
         if (apiGroups == null) return;
-
+        
+        var curlConstructor = new CurlConstructor(repositoryService, context);
+        
         foreach (var apiGroupExt in apiGroups)
         {
             var isAuthorized = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
@@ -66,7 +68,7 @@ public class DataSeeder(
                 var apiEndpoint = new ApiEndpoint
                 {
                     Name = string.Concat(apiEndpointExt.Name, " ", httpMethod),
-                    cURL = await ConstructCurlCommand(apiGroupExt, apiEndpointExt, repositoryAnalysis),
+                    cURL = await curlConstructor.ConstructCurlCommand(apiGroupExt, apiEndpointExt, repositoryAnalysis),
                     ExpectedStatusCode = 200, // As mentioned, it's always 200
                     ApiGroupId = apiGroup.Id,
                     ServiceStatusId = serviceStatus.Id,
@@ -83,69 +85,7 @@ public class DataSeeder(
         }
     }
 
-
-    private async Task<string> ConstructCurlCommand(ApiGroup apiGroup, ApiEndpoint apiEndpoint,
-        RepositoryAnalysis repositoryAnalysis)
-    {
-        // Obtain the API prefix asynchronously and ensure it's correctly formatted
-        var apiPrefix = await repositoryService.GetCombinedApiPrefixAsync(repositoryAnalysis);
-        apiPrefix = string.IsNullOrEmpty(apiPrefix) ? "" : $"{apiPrefix.Trim('/')}/";
-
-        // Construct the base URL
-        var baseUrl = repositoryAnalysis.BaseUrl?.TrimEnd('/') ?? "localhost";
-
-        // Sanitize apiGroupName to remove "Controller" suffix and adjust apiEndpoint.Name as necessary
-        var sanitizedApiGroupName = apiGroup.Name.Replace("Controller", "");
-
-        // Construct the full URL incorporating the base URL, API prefix, controller name, and endpoint name
-        var fullUrl = $"{baseUrl}/{apiPrefix}{sanitizedApiGroupName}/{apiEndpoint.Name}".TrimEnd('/');
-
-        // Extract the HTTP method from annotations, default to GET if not specified or found
-        var httpMethod = ExtractHttpMethod(apiEndpoint.Annotations);
-
-        // Initialize the commandBuilder with the cURL command
-        var commandBuilder = new StringBuilder($"curl -X {httpMethod} \"{fullUrl}\"");
-
-        // Append headers for JSON content type if expected
-        if (apiEndpoint.Annotations?.Contains("expectsJson") == true)
-            commandBuilder.Append(" -H \"Content-Type: application/json\"");
-
-        var variables = await context.RepositoryAnalysisVariables
-            .Where(rav => rav.RepositoryAnalysisId == repositoryAnalysis.Id)
-            .ToListAsync();
-
-
-        // Include authorization token if available
-        foreach (var rav in variables)
-        {
-            // Assuming context.Variables is properly set up to include Variables in your context
-            var variable = await context.Variables.FindAsync(rav.VariableId);
-            if (variable != null)
-            {
-                var decryptedValue =
-                    variable.DecryptVariable(); // Assuming this method exists and returns the decrypted value
-                // Append each variable as a header. Assuming variable.Name holds the header name.
-                commandBuilder.Append($" -H \"{variable.Name}: {decryptedValue}\"");
-            }
-        }
-
-        return commandBuilder.ToString();
-    }
-
-// Helper method to extract the HTTP method from the endpoint's annotations
-    private string ExtractHttpMethod(string annotations)
-    {
-        if (string.IsNullOrEmpty(annotations)) return "GET";
-
-        var httpMethodAnnotation = annotations.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(a => a.StartsWith("Http"));
-
-        if (httpMethodAnnotation != null) return httpMethodAnnotation.Replace("Http", "").ToUpper();
-
-        return "GET"; // Default to GET if no specific HTTP method annotation is found
-    }
-
-
+    
     private async void SeedOnDeploy()
     {
         if (context.ServiceStatuses.Any()) return;

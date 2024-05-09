@@ -109,6 +109,11 @@
         <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\Shared\_ValidationScriptsPartial.cshtml"/>
         <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\_ViewImports.cshtml"/>
         <_ContentIncludedByDefault Remove="Repos\healthmonitor\HealthMonitorApp\Views\_ViewStart.cshtml"/>
+        <_ContentIncludedByDefault Remove="Pages\ApiEndpoint\Create.cshtml" />
+        <_ContentIncludedByDefault Remove="Pages\ApiEndpoint\Details.cshtml" />
+        <_ContentIncludedByDefault Remove="Pages\ApiEndpoint\Edit.cshtml" />
+        <_ContentIncludedByDefault Remove="Pages\ApiEndpoint\Index.cshtml" />
+        <_ContentIncludedByDefault Remove="Pages\ApiEndpoint\_DeleteConfirmation.cshtml" />
     </ItemGroup>
 
     <ItemGroup>

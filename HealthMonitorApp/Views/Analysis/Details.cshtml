@@ -40,7 +40,9 @@
 
     </dl>
     <div align="center">
-        <a href='@Url.Action("GetReportExcel", "Analysis", new { id = Model.Id })' ><i class='fas fa-file-excel'></i> Download Summary as Excel</a>;
+        <a class="btn btn-primary download-link"  href='@Url.Action("GetReportExcel", "Analysis", new { id = Model.Id })' data-id="@Model.Id" download="Report.xlsx">
+            <i class='fas fa-file-excel'></i> Download Summary as Excel
+        </a>  
     </div>
     <br>
     <!-- Iframe to display the HTML report -->
@@ -56,7 +58,8 @@
 </body>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-
+    // Prevent loading indicator for download links
+    $('.download-link').on('click', function(event) {
+        event.stopPropagation();  // Stop the event from bubbling up to avoid triggering the loading indicator
     });
 </script>

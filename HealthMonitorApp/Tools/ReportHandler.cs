@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Tools;
 
-public class ReportHandler(RepositoryService repositoryService)
-{
+public class ReportHandler(RepositoryService repositoryService ) {
+
     public async Task ModifyAndSaveReport(RepositoryAnalysis? repositoryAnalysis)
     {
         var endpointJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);

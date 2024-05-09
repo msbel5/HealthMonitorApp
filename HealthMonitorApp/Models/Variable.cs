@@ -10,17 +10,24 @@ public class Variable
     
     public string Value { get; set; }
     
-    public ICollection<ApiEndpointVariable> ApiEndpointVariables { get; set; } = new List<ApiEndpointVariable>();
-    public ICollection<ApiGroupVariable> ApiGroupVariables { get; set; } = new List<ApiGroupVariable>();
-    public ICollection<RepositoryAnalysisVariable> RepositoryAnalysisVariables { get; set; } = new List<RepositoryAnalysisVariable>();
+    // References for hierarchy
+    public Guid? ApiGroupId { get; set; }
+    public ApiGroup? ApiGroup { get; set; }
+
+    public Guid? RepositoryAnalysisId { get; set; }
+    public RepositoryAnalysis? RepositoryAnalysis { get; set; }
+
+
+    private string _value;
     
-    public static string EncryptVariable(string Value)
+    public static string  EncryptVariable(string value)
     {
         // Placeholder for encryption logic
-        return Encrypt(Value);
+        var val=  Encrypt(value);
+        return val;
     }
 
-    public  string DecryptVariable()
+    public string DecryptVariable()
     {
         var variables = Decrypt(Value);
         return variables;

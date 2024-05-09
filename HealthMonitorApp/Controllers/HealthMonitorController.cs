@@ -1,3 +1,4 @@
+using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
@@ -42,7 +43,7 @@ public class HealthMonitorController : Controller
         // Fetch the services and group them by ApiGroup
         var services = _context.ServiceStatuses
             .Include(ss => ss.ApiEndpoint)
-            .ThenInclude(ae => ae.ApiGroup)
+            .ThenInclude(ae => ae.ApiGroup).ThenInclude(apiGroup => apiGroup.RepositoryAnalysis)
             .ToList();
 
 
@@ -71,7 +72,8 @@ public class HealthMonitorController : Controller
                 ID = service.Id,
                 Name = service.Name,
                 IsHealthy = service.IsHealthy,
-                ApiGroupName = service.ApiEndpoint?.ApiGroup?.Name ?? "Unknown", // Fallback to "Unknown" if null
+                ApiGroupName = service.ApiEndpoint?.ApiGroup?.Name ?? "N/A", // Fallback to "Unknown" if null
+                RepositoryName = service.ApiEndpoint?.ApiGroup?.RepositoryAnalysis?.Name ?? "N/A", // Fallback to "Unknown" if null
                 CurrentResponseTime = service.ResponseTime,
                 LastThreeResponseTimes = lastThreeHistories,
                 AverageResponseTime = averageResponseTime,
@@ -232,8 +234,10 @@ public class HealthMonitorController : Controller
 
         var serviceStatus = await _context.ServiceStatuses
             .Include(s => s.ApiEndpoint)
+            .ThenInclude(ae => ae.ApiGroup)
             .FirstOrDefaultAsync(s => s.Id == id.Value);
-
+        serviceStatus.ApiEndpointId = serviceStatus.ApiEndpoint.Id;
+        serviceStatus.ApiEndpoint.ApiGroupId = serviceStatus.ApiEndpoint.ApiGroup.Id;
         if (serviceStatus == null) return NotFound();
 
         var viewModel = new ServiceStatusEditViewModel
@@ -242,7 +246,8 @@ public class HealthMonitorController : Controller
             Name = serviceStatus.Name,
             ExpectedStatusCode = serviceStatus.ApiEndpoint.ExpectedStatusCode,
             CURL = serviceStatus.ApiEndpoint.cURL,
-            ApiGroupID = serviceStatus.ApiEndpoint.ApiGroupId,
+            ApiEndpointId = serviceStatus.ApiEndpointId,
+            ApiGroupId = serviceStatus.ApiEndpoint.ApiGroupId,
             ApiGroups = _context.ApiGroups.ToList(),
             AssertionScript = serviceStatus.AssertionScript
         };
@@ -255,14 +260,14 @@ public class HealthMonitorController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(Guid id,
-        [Bind("Id,Name,ExpectedStatusCode,CURL,AssertionScript,ApiGroupId,NewApiGroupName,ApiGroups")]
+        [Bind("ID,Name,ExpectedStatusCode,CURL,AssertionScript,ApiEndpointId,ApiGroupId,NewApiGroupName")]
         ServiceStatusEditViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
             try
             {
-                if (viewModel.ApiGroupID == Guid.Empty)
+                if (viewModel.ApiGroupId == Guid.Empty)
                 {
                     if (string.IsNullOrEmpty(viewModel.NewApiGroupName))
                     {
@@ -273,20 +278,22 @@ public class HealthMonitorController : Controller
                     var newApiGroup = new ApiGroup { Name = viewModel.NewApiGroupName };
                     _context.ApiGroups.Add(newApiGroup);
                     await _context.SaveChangesAsync();
-                    viewModel.ApiGroupID = newApiGroup.Id;
+                    viewModel.ApiGroupId = newApiGroup.Id;
                 }
 
                 // Assuming that the Id property of ServiceStatusEditViewModel is the Id of ServiceStatus
                 var serviceStatus = await _context.ServiceStatuses.Include(s => s.ApiEndpoint)
-                    .FirstOrDefaultAsync(s => s.Id == viewModel.ID);
-
+                    .ThenInclude(ae => ae.ApiGroup)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+                
                 if (serviceStatus == null) return NotFound();
-
+                
                 // Update the properties of serviceStatus and its ApiEndpoint based on viewModel
                 serviceStatus.Name = viewModel.Name;
+                serviceStatus.ApiEndpointId = viewModel.ApiEndpointId;
                 serviceStatus.ApiEndpoint.ExpectedStatusCode = viewModel.ExpectedStatusCode;
                 serviceStatus.ApiEndpoint.cURL = viewModel.CURL;
-                serviceStatus.ApiEndpoint.ApiGroupId = viewModel.ApiGroupID;
+                serviceStatus.ApiEndpoint.ApiGroupId = viewModel.ApiGroupId.GetValueOrDefault(); // Assign new group ID here
                 if (viewModel.AssertionScript != null)
                 {
                     var scriptCheckResult =
@@ -308,7 +315,10 @@ public class HealthMonitorController : Controller
 
             return RedirectToAction(nameof(Index));
         }
-
+        
+        
+        viewModel.ApiGroups = _context.ApiGroups.ToList();
+        
         return View(viewModel);
     }
 

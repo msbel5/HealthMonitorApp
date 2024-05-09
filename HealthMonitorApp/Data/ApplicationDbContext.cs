@@ -15,9 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceStatusHistory> ServiceStatusHistories { get; set; }
     public DbSet<RepositoryAnalysis> RepositoryAnalysis { get; set; }
     public DbSet<Variable> Variables { get; set; }
-    public DbSet<ApiGroupVariable> ApiGroupVariables { get; set; }
-    public DbSet<ApiEndpointVariable> ApiEndpointVariables { get; set; }
-    public DbSet<RepositoryAnalysisVariable> RepositoryAnalysisVariables { get; set; }
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -52,38 +50,19 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(ag => ag.RepositoryAnalysisId)
             .OnDelete(DeleteBehavior.SetNull);
         
-        // Configure many-to-many for ApiGroup and Variable
-        modelBuilder.Entity<ApiGroupVariable>().HasKey(agv => new { agv.ApiGroupId, agv.VariableId });
-        modelBuilder.Entity<ApiGroupVariable>()
-            .HasOne(agv => agv.ApiGroup)
-            .WithMany(ag => ag.ApiGroupVariables)
-            .HasForeignKey(agv => agv.ApiGroupId);
-        modelBuilder.Entity<ApiGroupVariable>()
-            .HasOne(agv => agv.Variable)
-            .WithMany(v => v.ApiGroupVariables)
-            .HasForeignKey(agv => agv.VariableId);
+        // Relationship between ApiGroup and Variable
+        modelBuilder.Entity<Variable>()
+            .HasOne(v => v.ApiGroup)
+            .WithMany(ag => ag.Variables)
+            .HasForeignKey(v => v.ApiGroupId)
+            .OnDelete(DeleteBehavior.Restrict); // Adjust the DeleteBehavior as per your requirements
 
-        // Configure many-to-many for ApiEndpoint and Variable
-        modelBuilder.Entity<ApiEndpointVariable>().HasKey(aev => new { aev.ApiEndpointId, aev.VariableId });
-        modelBuilder.Entity<ApiEndpointVariable>()
-            .HasOne(aev => aev.ApiEndpoint)
-            .WithMany(ae => ae.ApiEndpointVariables)
-            .HasForeignKey(aev => aev.ApiEndpointId);
-        modelBuilder.Entity<ApiEndpointVariable>()
-            .HasOne(aev => aev.Variable)
-            .WithMany(v => v.ApiEndpointVariables)
-            .HasForeignKey(aev => aev.VariableId);
-
-        // Configure many-to-many for RepositoryAnalysis and Variable
-        modelBuilder.Entity<RepositoryAnalysisVariable>().HasKey(rav => new { rav.RepositoryAnalysisId, rav.VariableId });
-        modelBuilder.Entity<RepositoryAnalysisVariable>()
-            .HasOne(rav => rav.RepositoryAnalysis)
-            .WithMany(ra => ra.RepositoryAnalysisVariables)
-            .HasForeignKey(rav => rav.RepositoryAnalysisId);
-        modelBuilder.Entity<RepositoryAnalysisVariable>()
-            .HasOne(rav => rav.Variable)
-            .WithMany(v => v.RepositoryAnalysisVariables)
-            .HasForeignKey(rav => rav.VariableId);
+        // Relationship between Repository and Variable
+        modelBuilder.Entity<Variable>()
+            .HasOne(v => v.RepositoryAnalysis)
+            .WithMany(r => r.Variables)
+            .HasForeignKey(v => v.RepositoryAnalysisId)
+            .OnDelete(DeleteBehavior.Restrict); // Adjust the DeleteBehavior as per your requirements
 
         
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();

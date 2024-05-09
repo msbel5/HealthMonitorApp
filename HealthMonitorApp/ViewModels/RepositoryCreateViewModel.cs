@@ -1,4 +1,8 @@
+using HealthMonitorApp.Models;
+
 namespace HealthMonitorApp.ViewModels;
+
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 public class RepositoryCreateViewModel
 {
@@ -10,11 +14,15 @@ public class RepositoryCreateViewModel
     public string? BaseUrl { get; set; }
 
     public bool IntegrateEndpoints { get; set; } = false;
-    
-    public List<VariableViewModel> Variables { get; set; } = new List<VariableViewModel>();
+
+    public List<Variable>? Variables { get; set; }
     
     public string? ExcludedControllers { get; set; }
     public string? ExcludedMethods { get; set; }
+    
+    public List<Guid>? SelectedApiGroupIds { get; set; } = new List<Guid>();
+    public List<SelectListItem> ApiGroups { get; set; } = new List<SelectListItem>();
+
 
 
 }

@@ -9,14 +9,16 @@ public class HealthCheckHostedService : IHostedService, IDisposable
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly ILogger<HealthCheckHostedService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly WarningService _warningService;
     private Timer _timer;
 
     public HealthCheckHostedService(IServiceScopeFactory scopeFactory, ILogger<HealthCheckHostedService> logger,
-        IHubContext<NotificationHub> hubContext)
+        IHubContext<NotificationHub> hubContext, WarningService warningService)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _hubContext = hubContext;
+        _warningService = warningService;
     }
 
     public void Dispose()
@@ -69,23 +71,17 @@ public class HealthCheckHostedService : IHostedService, IDisposable
 
         if (failedServices.Any())
         {
-            var emailBody = "The following services failed the health check: " +
-                            string.Join(", ", failedServices);
+            var emailBody = "The following services failed the health check: ";
+            _logger.LogWarning("The following services failed the health check: {Services}", failedServices);
+            foreach (var failedService in failedServices)
+            {
+                emailBody += failedService + ", ";
 
-            var warningService = new WarningService(new Logger<WarningService>(new LoggerFactory()));
-            await warningService.SendEmailAsync(
-                "msbel5@gmail.com",
-                "Health Check Failure",
-                emailBody,
-                "<strong>" + emailBody + "</strong>" // Example of converting plain text email body to HTML
-            );
+            }
 
-            await warningService.SendWhatsAppMessageAsync(
-                "905555555555",
-                emailBody
-            );
-
-            await warningService.SendEmailViaExchangeAsync(
+            //var warningService = new WarningService(new Logger<WarningService>(new LoggerFactory()));
+            
+            await _warningService.SendEmailViaExchangeAsync(
                 "df.muhammed.sıddık.bel@a101.com.tr",
                 "Sos Health Check Failure",
                 emailBody

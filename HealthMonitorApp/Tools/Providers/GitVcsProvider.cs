@@ -40,7 +40,8 @@ public class GitVcsProvider : IVcsProvider
 
         var remoteLatestCommitHash = output.Split('\t')[0]; // Extract the commit hash
         var storedLatestCommitHash = repositoryAnalysis.LatestCommitHash;
-
+        
+        
         return remoteLatestCommitHash == storedLatestCommitHash;
     }
 

@@ -1,8 +1,28 @@
 @model HealthMonitorApp.ViewModels.RepositoryCreateViewModel
 <style>
+    .form-group {
+        display: flex;
+        align-items: flex-end; /* Align items to the bottom */
+        flex-wrap: wrap;
+        gap: 10px; /* Adds a gap between items */
+    }
+    .variable-group {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Adds a gap between inputs and buttons within each variable group */
+    }
+    .variable-group > * {
+        flex: 1; /* Allows inputs and button to equally share the container width */
+    }
+    #addVariableButton, .removeVariableButton {
+        flex-grow: 0; /* Prevents buttons from growing */
+    }
+    #variablesTitle {
+        display: none; /* Initially hide the Variables title */
+    }
 </style>
 
-<form asp-action="Create" style="max-width: 500px; margin: auto;">
+<form asp-action="Create" style="max-width: 500px; margin: auto; align-content: center">
     <div class="form-group">
         <label asp-for="Name">Name</label>
         <input asp-for="Name" class="form-control"/>
@@ -70,11 +90,26 @@
         </label>
     </div>
     <div class="form-group  d-none" id="ExcludedMethodsGroup" >
-            <div id="ExcludeMethods-container">
-                <input asp-for="ExcludedMethods" class="form-control ExcludedMethods" rows="4" name="ExcludedMethods">
-            </div>
+        <div id="ExcludeMethods-container">
+            <input asp-for="ExcludedMethods" class="form-control ExcludedMethods" rows="4" name="ExcludedMethods">
         </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+    <div class="form-group">
+        <label asp-for="SelectedApiGroupIds">Choose To Include Api Groups</label>
+        <select asp-for="SelectedApiGroupIds" asp-items="Model.ApiGroups" class="form-control" multiple="multiple"></select>
+    </div>
+    <div class="form-group justify-content-center" style="align-items: center">
+        <h3 id="variablesTitle" style="text-align: center;">Variables</h3>
+        <div id="variablesContainer">
+            <!-- Variable inputs will be added here -->
+        </div>
+    </div>
+    <br/>
+    <div class="form-group d-flex justify-content-lg-evenly align-items-center">
+        <button type="button" id="addVariableButton" class="btn btn-secondary">Add Variable</button>
+        <button type="submit" class="btn btn-primary justify-content-end">Submit</button>
+    </div>
+
 </form>
 
 <script>
@@ -97,6 +132,37 @@ document.getElementById('ExcludedControllersCheckBox').addEventListener('change'
 document.getElementById('ExcludedMethodsCheckBox').addEventListener('change', function() {
     let isChecked = this.checked;
     document.getElementById('ExcludedMethodsGroup').classList.toggle('d-none', !isChecked);
-    
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const variablesContainer = document.getElementById('variablesContainer');
+    const addVariableButton = document.getElementById('addVariableButton');
+    const variablesTitle = document.getElementById('variablesTitle');
+
+    function updateVariablesTitleVisibility() {
+        variablesTitle.style.display = variablesContainer.children.length > 0 ? 'block' : 'none';
+    }
+
+    addVariableButton.addEventListener('click', function () {
+        const variableIndex = variablesContainer.children.length;
+        const variableDiv = document.createElement('div');
+        variableDiv.className = 'variable-group d-flex align-items-center mb-2';
+        variableDiv.innerHTML = `
+            <input type="text" name="Variables[${variableIndex}].Name" class="form-control" placeholder="Name" /> = 
+            <input type="text" name="Variables[${variableIndex}].Value" class="form-control ml-2" placeholder="Value" />
+            <button type="button" class="removeVariableButton btn btn-danger ml-2">-</button>
+        `;
+
+        variablesContainer.appendChild(variableDiv);
+
+        variableDiv.querySelector('.removeVariableButton').addEventListener('click', function () {
+            variableDiv.remove();
+            updateVariablesTitleVisibility();
+        });
+
+        updateVariablesTitleVisibility();
+    });
+});
+
+
 </script>

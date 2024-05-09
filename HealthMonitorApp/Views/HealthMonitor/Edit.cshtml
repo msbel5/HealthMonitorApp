@@ -33,7 +33,10 @@
 <div class="container mt-5">
     <h2 class="text-center">Edit Service Status</h2>
     <form asp-action="Edit" asp-controller="HealthMonitor" method="post" id="editForm">
-        @Html.HiddenFor(model => model.ID)
+        <input type="hidden" asp-for="ID" />
+        <input type="hidden" asp-for="ApiGroupId" />
+        <input type="hidden" asp-for="ApiEndpointId" />
+
 
         <!-- Service Status Name -->
         <div class="form-group">
@@ -70,8 +73,8 @@
 
         <!-- Existing API Groups -->
         <div class="form-group">
-            <label asp-for="ApiGroupID">API Groups</label>
-            <select asp-for="ApiGroupID" class="form-control">
+            <label asp-for="ApiGroupId">API Groups</label>
+            <select asp-for="ApiGroupId" class="form-control">
                 <option value="0">Add New API Group</option>
                 @if (Model.ApiGroups != null)
                 {
@@ -102,7 +105,7 @@
 
         <!-- Update Button -->
         <div class="form-group text-center">
-            <button type="submit" class="btn btn-primary">Update</button>
+            <input type="submit" value="Update" class="btn btn-primary"/>
         </div>
     </form>
 

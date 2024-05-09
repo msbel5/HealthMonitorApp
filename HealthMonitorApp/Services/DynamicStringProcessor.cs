@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthMonitorApp.Services;
 
-public class DynamicStringProcessor(ApplicationDbContext context)
-{
+public class DynamicStringProcessor(ApplicationDbContext context) {
+    private readonly Logger<DynamicStringProcessor> _logger = new Logger<DynamicStringProcessor>(new LoggerFactory());
     public string Process(ApiEndpoint apiEndpoint)
     {
         var curlCommand = ApplyVariables(apiEndpoint);
@@ -22,6 +22,7 @@ public class DynamicStringProcessor(ApplicationDbContext context)
             curlCommand =
                 curlCommand.Replace(match.Value, result); // replace JS code with the result in the original string
         }
+        _logger.LogInformation("Processed cURL command: " + curlCommand);
         return curlCommand;
     }
 
@@ -29,21 +30,18 @@ public class DynamicStringProcessor(ApplicationDbContext context)
     {
         
         var rootApiGroup =  context.ApiGroups
-            .FirstOrDefault(ag => apiEndpoint != null && ag.Id == apiEndpoint.ApiGroupId);
+            .FirstOrDefault(ag => ag.Id == apiEndpoint.ApiGroupId);
         
         var repositoryAnalysis = context.RepositoryAnalysis
             .FirstOrDefault(ra => rootApiGroup != null && ra.Id == rootApiGroup.RepositoryAnalysisId);
         
-        var repositoryAnalysisVariables = context.RepositoryAnalysisVariables
+        var repositoryAnalysisVariables = context.Variables
             .Where(rlv => repositoryAnalysis != null && rlv.RepositoryAnalysisId == repositoryAnalysis.Id)
-            .Include(repositoryAnalysisVariable => repositoryAnalysisVariable.Variable).ToList();
+            .Include(rlv => rlv.RepositoryAnalysis) ;
         
-        var apiGroupVariables = context.ApiGroupVariables
+        var apiGroupVariables = context.Variables
             .Where(agv => rootApiGroup != null && agv.ApiGroupId == rootApiGroup.Id)
-            .Include(apiGroupVariable => apiGroupVariable.Variable).ToList();
-        
-        var apiEndpointVariables = context.ApiEndpointVariables.Where(aev => apiEndpoint != null && aev.ApiEndpointId == apiEndpoint.Id)
-            .Include(apiEndpointVariable => apiEndpointVariable.Variable).ToList();
+            .Include(apiGroupVariable => apiGroupVariable.ApiGroup).ToList();
         
         
         var curlCommand = apiEndpoint?.cURL;
@@ -55,13 +53,15 @@ public class DynamicStringProcessor(ApplicationDbContext context)
             foreach (Match match in matches)
             {
                 var variableName = match.Groups[1].Value; // extract variable name without $[[]]
-                var variableValue =  repositoryAnalysisVariables.FirstOrDefault(rlv => rlv.Variable.Name == (variableName))?.Variable.DecryptVariable() ??
-                                     apiGroupVariables.FirstOrDefault(agv => agv.Variable.Name == variableName)?.Variable.DecryptVariable() ??
-                                     apiEndpointVariables.FirstOrDefault(aev => aev.Variable.Name == variableName)?.Variable.DecryptVariable();
+                var variableValue =  repositoryAnalysisVariables.FirstOrDefault(rlv => rlv.Name == (variableName))?.DecryptVariable() ??
+                                     apiGroupVariables.FirstOrDefault(agv => agv.Name == variableName)?.DecryptVariable();
                 curlCommand = curlCommand.Replace(match.Value, variableValue); // replace variable with the value in the original string
             }
         }
+        
 
+        _logger.LogInformation("Applied variables to cURL command: " + curlCommand);
+        
         return curlCommand ?? "variableFaulty";
     }
 
@@ -69,15 +69,21 @@ public class DynamicStringProcessor(ApplicationDbContext context)
     public bool ValidateJavaScript(ServiceStatus serviceStatus)
     {
         if (string.IsNullOrEmpty(serviceStatus.AssertionScript))
+        {
+            _logger.LogInformation("Script is empty");
             return true;
+        }
         var script = serviceStatus.AssertionScript;
         // Disallow these methods/objects
         var disallowed = new[] { "eval", "Function", "window", "document", "require" };
 
         foreach (var item in disallowed)
             if (script.Contains(item))
+            {
+                _logger.LogInformation("Script contains disallowed method or object: " + item);
                 return false;
-
+            }
+        _logger.LogInformation("Script is valid");
         return true;
     }
 }

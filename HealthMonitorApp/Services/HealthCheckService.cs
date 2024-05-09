@@ -58,7 +58,6 @@ public class HealthCheckService
                     ServiceStatusId = endpoint.ServiceStatusId,
                     ApiGroupId = endpoint.ApiGroupId,
                     Annotations = endpoint.Annotations,
-                    ApiEndpointVariables = endpoint.ApiEndpointVariables,
                     ApiGroup = endpoint.ApiGroup,
                     ServiceStatus = endpoint.ServiceStatus,
                 };

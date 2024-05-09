@@ -7,7 +7,6 @@ public class RepositoryAnalysis
     private const string Report = "Report.html";
     private const string Excel = "Report.xlsx";
 
-
     public Guid Id { get; set; }
 
     public string Name { get; set; }
@@ -32,8 +31,8 @@ public class RepositoryAnalysis
     
     public ICollection<ApiGroup> ApiGroups { get; set; } = new List<ApiGroup>();
 
-    public ICollection<RepositoryAnalysisVariable>? RepositoryAnalysisVariables { get; set; } =
-        new List<RepositoryAnalysisVariable>();
+    public ICollection<Variable>? Variables { get; set; } =
+        new List<Variable>();
 
 
     // You might want methods to encrypt/decrypt the username and password for storage

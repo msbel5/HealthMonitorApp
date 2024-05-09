@@ -15,16 +15,14 @@
         width: 100%;
         height: 100%;
         background-color: rgba(255, 255, 255, 0.8);
-        z-index: 1051; /* Bootstrap modal z-index is 1050 */
-        display: none;
+        z-index: 1051;
+        display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: center;    
     }
 
+
     .spinner {
-        position: relative;
-        top: 47.5%;
-        left: 47.5%;
         border: 5px solid #f3f3f3;
         border-top: 5px solid #3498db;
         border-radius: 50%;
@@ -33,6 +31,13 @@
         animation: spin 2s linear infinite;
     }
 
+    .heartbeat-icon {
+        position: absolute; 
+        font-size: 30px;
+        color: #e74c3c;
+        animation: heartbeat 2s infinite;
+        z-index: 1;
+    }
 
     @@keyframes heartbeat {
         0% {
@@ -51,18 +56,7 @@
             transform: scale(1.5) rotate3d(0, 1, 0, 360deg);
         }
     }
-
-    .heartbeat-icon {
-        position: relative;
-        top: 39.5%;
-        left: 49.25%;
-        display: inline-block;
-        animation: heartbeat 2s infinite;
-        font-size: 30px; /* Adjust size as needed */
-        color: #e74c3c; /* Adjust color as needed */
-    }
-
-
+    
     @@keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -115,6 +109,7 @@
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script>
     $(document).ready(function() {
+        hideLoadingIndicator();
         // Handle AJAX start and stop globally
         $(document).ajaxStart(function() {
             showLoadingIndicator();
@@ -135,6 +130,11 @@
         // Handle navigation and refresh
         window.addEventListener("beforeunload", showLoadingIndicator);
 
+        window.addEventListener("popstate", function() {
+            // Handles browser back/forward button clicks
+            hideLoadingIndicatorWithTimeout();
+        });
+        
         function showLoadingIndicator() {
             $("#loadingIndicator").fadeIn("fast"); // Smoothly fade in the loading indicator
         }
@@ -142,6 +142,16 @@
         function hideLoadingIndicator() {
             $("#loadingIndicator").fadeOut("fast"); // Smoothly fade out the loading indicator
         }
+        
+        // Ensure loading indicator is hidden after a timeout to prevent hanging
+        function hideLoadingIndicatorWithTimeout() {
+            setTimeout(function() {
+                if ($.active === 0) {  // Checks if there are no active AJAX requests
+                    hideLoadingIndicator();
+                }
+            }, 1000); // Adjust timeout as needed, 5000ms = 5 seconds
+        }
+
     });
 
 </script>

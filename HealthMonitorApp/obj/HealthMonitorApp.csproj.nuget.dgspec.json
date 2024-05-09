@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {}
+    "/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj": {}
   },
   "projects": {
-    "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj": {
+    "/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
+        "projectUniqueName": "/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj",
         "projectName": "HealthMonitorApp",
-        "projectPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/HealthMonitorApp.csproj",
-        "packagesPath": "/Users/macgyver/.nuget/packages/",
-        "outputPath": "/Users/macgyver/RiderProjects/healthmonitorapp/HealthMonitorApp/obj/",
+        "projectPath": "/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/HealthMonitorApp.csproj",
+        "packagesPath": "/Users/n100166/.nuget/packages/",
+        "outputPath": "/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/macgyver/.nuget/NuGet/NuGet.Config"
+          "/Users/n100166/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -124,7 +124,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.100/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

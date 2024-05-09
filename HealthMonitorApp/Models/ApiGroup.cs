@@ -13,6 +13,6 @@ public class ApiGroup
 
     public ICollection<ApiEndpoint> ApiEndpoints { get; set; } = new List<ApiEndpoint>();
 
-    public ICollection<ApiGroupVariable>? ApiGroupVariables { get; set; } = new List<ApiGroupVariable>();
+    public ICollection<Variable>? Variables { get; set; } = new List<Variable>();
     public string? Annotations { get; set; }
 }

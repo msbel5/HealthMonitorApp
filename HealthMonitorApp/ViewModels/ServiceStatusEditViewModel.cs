@@ -16,15 +16,12 @@ public class ServiceStatusEditViewModel
     public int ExpectedStatusCode { get; set; }
 
     [Required]
-    [RegularExpression(@"^(https?:\/\/.+|curl\s+.+)$",
-        ErrorMessage = "The CURL field must be a valid URL or cURL command.")]
     public string CURL { get; set; }
 
     public string? AssertionScript { get; set; }
-    public Guid? ApiGroupID { get; set; }
+    public Guid ApiEndpointId { get; set; }
+    public Guid? ApiGroupId { get; set; }
     public string? NewApiGroupName { get; set; }
     public List<ApiGroup>? ApiGroups { get; set; }
     
-    public List<VariableViewModel> Variables { get; set; } = new List<VariableViewModel>();
-
 }

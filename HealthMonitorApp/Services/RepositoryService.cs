@@ -14,33 +14,39 @@ public class RepositoryService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IWebHostEnvironment _env;
+    private readonly Logger<RepositoryService> _logger;
 
 
     public RepositoryService(ApplicationDbContext dbContext, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
         _env = env;
+        _logger = new Logger<RepositoryService>(new LoggerFactory());
     }
 
 
     public async Task<RepositoryAnalysis?> GetRepositoryAnalysisByUrlAsync(string repositoryUrl)
     {
+        _logger.LogInformation("Getting repository analysis by URL: {RepositoryUrl}", repositoryUrl);
         return await _dbContext.RepositoryAnalysis.FirstOrDefaultAsync(ra => ra.Url == repositoryUrl);
     }
 
     public async Task<RepositoryAnalysis?> GetRepositoryAnalysisByNameAsync(string repositoryName)
     {
+        _logger.LogInformation("Getting repository analysis by name: {RepositoryName}", repositoryName);
         return await _dbContext.RepositoryAnalysis.FirstOrDefaultAsync(ra => ra.Name == repositoryName);
     }
 
 
     public async Task<List<RepositoryAnalysis?>> GetAllRepositoryAnalysis()
     {
+        _logger.LogInformation("Getting all repository analysis");
         return await _dbContext.RepositoryAnalysis.ToListAsync();
     }
 
     public async Task<RepositoryAnalysis?> GetRepositoryAnalysisByIdAsync(Guid id)
     {
+        _logger.LogInformation("Getting repository analysis by ID: {RepositoryId}", id);
         return await _dbContext.RepositoryAnalysis
             .Include(ra => ra.ApiGroups)
             .ThenInclude(ag => ag.ApiEndpoints)
@@ -53,25 +59,98 @@ public class RepositoryService
     {
         _dbContext.RepositoryAnalysis.Add(repositoryAnalysis);
         await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("Saved repository analysis: {RepositoryName}", repositoryAnalysis.Name);
     }
 
     public async Task UpdateRepositoryAnalysisAsync(RepositoryAnalysis repositoryAnalysis)
     {
         _dbContext.RepositoryAnalysis.Update(repositoryAnalysis);
         await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("Updated repository analysis: {RepositoryName}", repositoryAnalysis.Name);
     }
 
     public async Task DeleteRepositoryAnalysisAsync(RepositoryAnalysis repositoryAnalysis)
     {
         _dbContext.RepositoryAnalysis.Remove(repositoryAnalysis);
         await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("Deleted repository analysis: {RepositoryName}", repositoryAnalysis.Name);
     }
+    public async Task CreateExcelFromRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
+    {
+        var json = await ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
+        var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(json);
+        if (apiGroups == null) return;
+
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add("API Endpoints");
+
+        // Set up the headers
+        worksheet.Cells[1, 1].Value = "Controller Name";
+        worksheet.Cells[1, 2].Value = "Endpoint Name";
+        worksheet.Cells[1, 3].Value = "Needs Token";
+        worksheet.Cells[1, 4].Value = "Is Authorized";
+        worksheet.Cells[1, 5].Value = "Is Open";
+        worksheet.Cells[1, 6].Value = "Annotations";
+
+        int currentRow = 2;
+        foreach (var group in apiGroups)
+        {
+            foreach (var endpoint in group.ApiEndpoints)
+            {
+                var needToken = (endpoint.IsAuthorized ?? false) || !(endpoint.IsOpen ?? true);
+
+                worksheet.Cells[currentRow, 1].Value = group.Name;
+                worksheet.Cells[currentRow, 2].Value = endpoint.Name;
+                worksheet.Cells[currentRow, 3].Value = needToken ? "Yes" : "No";
+                worksheet.Cells[currentRow, 4].Value = endpoint.IsAuthorized == true ? "Yes" : "No";
+                worksheet.Cells[currentRow, 5].Value = endpoint.IsOpen == true ? "Yes" : "No";
+                worksheet.Cells[currentRow, 6].Value = endpoint.Annotations;
+                currentRow++;
+            }
+        }
+
+        // Convert range to table for sortable columns
+        var tableName = "ApiEndpointsTable";
+        var tableRange = worksheet.Cells[1, 1, currentRow - 1, 6];
+        var table = worksheet.Tables.Add(tableRange, tableName);
+        table.ShowHeader = true;
+        table.ShowFilter = true;
+        table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium2;
+
+        // Auto-fit columns
+        worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+        // Apply conditional formatting for the entire row based on "Needs Token" column
+        for (int row = 2; row < currentRow; row++)
+        {
+            var rowRange = worksheet.Cells[row, 1, row, 6];
+            var condition = worksheet.ConditionalFormatting.AddExpression(rowRange);
+            condition.Formula = $"$C{row}=\"Yes\"";
+            condition.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes", StringComparison.OrdinalIgnoreCase) ;
+            condition.Style.Fill.BackgroundColor.Color = needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
+        }
+
+        // Save the Excel file
+        var filePath = repositoryAnalysis?.GetExcelPath();
+        if (filePath != null)
+        {
+            var fileInfo = new FileInfo(filePath);
+            await package.SaveAsAsync(fileInfo);
+        }
+        
+        _logger.LogInformation("Created Excel file for repository: {RepositoryName}", repositoryAnalysis?.Name);
+        
+    }
+    
 
     public async Task<string> ExtractControllersAndEndpointsAsJsonAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var apiGroups = new List<ApiGroup>();
         var allFiles = Directory.GetFiles(repositoryAnalysis.Path, "*.cs", SearchOption.AllDirectories);
         var compilation = await CreateCompilationAsync(allFiles);
+        _logger.LogInformation("Extracting controllers and endpoints from {FileCount} files", allFiles.Length);
 
         foreach (var tree in compilation.SyntaxTrees)
         {
@@ -94,6 +173,8 @@ public class RepositoryService
                     IsAuthorized = isControllerAuthorized,
                     Annotations = controllerAnnotationsListed
                 };
+                
+                _logger.LogInformation("Found API group: {GroupName}", apiGroup.Name);
 
                 foreach (var method in controller.Members.OfType<MethodDeclarationSyntax>())
                 {
@@ -113,6 +194,8 @@ public class RepositoryService
                     };
 
                     apiGroup.ApiEndpoints.Add(apiEndPoint);
+                    
+                    _logger.LogInformation("Found API endpoint: {EndpointName} on {ApiGroup}", apiEndPoint.Name, apiGroup.Name);
                 }
 
                 apiGroups.Add(apiGroup);
@@ -143,80 +226,150 @@ public class RepositoryService
         
 
         var json = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
+        _logger.LogInformation("Extracted {ApiGroupCount} API groups and {ApiEndpointCount} endpoints", apiGroups.Count , apiGroups.Sum(g => g.ApiEndpoints.Count));
+        _logger.LogDebug("Extracted API groups and endpoints: {Json}", json);
         return json;
     }
-
     
-    public async Task CreateExcelFromRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
-{
-    var json = await ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
-    var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(json);
-    if (apiGroups == null) return;
-
-    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-    using var package = new ExcelPackage();
-    var worksheet = package.Workbook.Worksheets.Add("API Endpoints");
-
-    // Set up the headers
-    worksheet.Cells[1, 1].Value = "Controller Name";
-    worksheet.Cells[1, 2].Value = "Endpoint Name";
-    worksheet.Cells[1, 3].Value = "Needs Token";
-    worksheet.Cells[1, 4].Value = "Is Authorized";
-    worksheet.Cells[1, 5].Value = "Is Open";
-    worksheet.Cells[1, 6].Value = "Annotations";
-
-    int currentRow = 2;
-    foreach (var group in apiGroups)
+    public async Task<string> ExtractControllersAndEndpointsAsDynamicJsonAsync(RepositoryAnalysis repositoryAnalysis)
     {
-        foreach (var endpoint in group.ApiEndpoints)
-        {
-            var needToken = (endpoint.IsAuthorized ?? false) || !(endpoint.IsOpen ?? true);
+        var apiGroups = new JArray();
+        var allFiles = Directory.GetFiles(repositoryAnalysis.Path, "*.cs", SearchOption.AllDirectories);
+        var compilation = await CreateCompilationAsync(allFiles);
+        _logger.LogInformation("Extracting controllers and endpoints from {FileCount} files", allFiles.Length);
 
-            worksheet.Cells[currentRow, 1].Value = group.Name;
-            worksheet.Cells[currentRow, 2].Value = endpoint.Name;
-            worksheet.Cells[currentRow, 3].Value = needToken ? "Yes" : "No";
-            worksheet.Cells[currentRow, 4].Value = endpoint.IsAuthorized == true ? "Yes" : "No";
-            worksheet.Cells[currentRow, 5].Value = endpoint.IsOpen == true ? "Yes" : "No";
-            worksheet.Cells[currentRow, 6].Value = endpoint.Annotations;
-            currentRow++;
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            var semanticModel = compilation.GetSemanticModel(tree);
+            var root = tree.GetRoot();
+
+            var controllers = root.DescendantNodes().OfType<ClassDeclarationSyntax>()
+                .Where(node => node.BaseList?.Types.Any(type => type.ToString().Contains("Controller")) ?? false);
+
+            foreach (var controller in controllers)
+            {
+                var apiGroup = new JObject
+                {
+                    ["Name"] = controller.Identifier.Text,
+                    ["IsAuthorized"] = controller.AttributeLists.SelectMany(attrList => attrList.Attributes).Any(attr => attr.Name.ToString().Contains("Authorize"))
+                };
+
+                var endpoints = new JArray();
+                foreach (var method in controller.Members.OfType<MethodDeclarationSyntax>())
+                {
+                    if (!IsLikelyApiEndpoint(method)) continue;
+
+                    var endpoint = new JObject
+                    {
+                        ["Name"] = method.Identifier.Text,
+                        ["IsAuthorized"] = method.AttributeLists.SelectMany(attr => attr.Attributes).Any(attr => attr.Name.ToString().Contains("Authorize")),
+                        ["Method"] = ExtractHttpMethod(method),
+                        ["Parameters"] = ExtractMethodParameters(method, semanticModel)
+                    };
+
+                    endpoints.Add(endpoint);
+                }
+
+                apiGroup["Endpoints"] = endpoints;
+                apiGroups.Add(apiGroup);
+            }
+        }
+
+        var result = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
+        _logger.LogInformation("Extracted API groups and endpoints: {Json}", result);
+        return result;
+    }
+
+
+    private string ExtractHttpMethod(MethodDeclarationSyntax method)
+    {
+        var attribute = method.AttributeLists
+            .SelectMany(attrList => attrList.Attributes)
+            .FirstOrDefault(attr => attr.Name.ToString().Contains("Http"));
+
+        return attribute?.Name.ToString().Replace("Http", "") ?? "GET";
+    }
+
+    private JArray ExtractMethodParameters(MethodDeclarationSyntax method, SemanticModel model)
+    {
+        var parameters = new JArray();
+        foreach (var parameter in method.ParameterList.Parameters)
+        {
+            var typeInfo = model.GetTypeInfo(parameter.Type);
+            var paramObj = new JObject
+            {
+                ["Name"] = parameter.Identifier.Text,
+                ["Type"] = typeInfo.Type?.ToString(),
+                ["Source"] = DetermineParameterSource(parameter)
+            };
+
+            if (typeInfo.Type is INamedTypeSymbol namedTypeSymbol && !namedTypeSymbol.IsValueType && namedTypeSymbol.Name != "String")
+            {
+                // Assume complex types are used in the body unless annotated otherwise
+                paramObj["IsComplex"] = true;
+                paramObj["Properties"] = ExtractPropertiesFromComplexType(namedTypeSymbol, model);
+            }
+
+            parameters.Add(paramObj);
+        }
+
+        return parameters;
+    }
+
+    private string DetermineParameterSource(ParameterSyntax parameter)
+    {
+        var sourceAttribute = parameter.AttributeLists
+            .SelectMany(a => a.Attributes)
+            .FirstOrDefault(a => new[] { "FromBody", "FromQuery", "FromRoute", "FromForm" }.Any(tag => a.Name.ToString().Contains(tag)));
+
+        return sourceAttribute?.Name.ToString().Replace("From", "").ToLower() ?? "query";
+    }
+
+    private JArray ExtractPropertiesFromComplexType(INamedTypeSymbol typeSymbol, SemanticModel model)
+    {
+        var properties = new JArray();
+        foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
+        {
+            properties.Add(new JObject
+            {
+                ["Name"] = property.Name,
+                ["Type"] = property.Type.ToString(),
+                ["DefaultValue"] = GetDefaultValueForType(property.Type)
+            });
+        }
+        return properties;
+    }
+
+    private string GetDefaultValueForType(ITypeSymbol type)
+    {
+        // Simplified example, enhance as needed
+        switch (type.SpecialType)
+        {
+            case SpecialType.System_String:
+                return "\"PLACEHOLDER\"";
+            case SpecialType.System_Int32:
+            case SpecialType.System_Decimal:
+                return "0";
+            case SpecialType.System_Boolean:
+                return "false";
+            case SpecialType.System_DateTime:
+                return "\"2024-01-01T00:00:00Z\"";
+            default:
+                // Handling enum by getting the first value or defaulting if no values are present
+                if (type.TypeKind == TypeKind.Enum)
+                {
+                    // Check if the type is an enum and get the first defined enum value or a default placeholder
+                    var enumType = type as INamedTypeSymbol;
+                    var firstEnumMember = enumType.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(e => e.IsStatic && e.HasConstantValue);
+                    return firstEnumMember != null ? "\"" + firstEnumMember.ConstantValue.ToString() + "\"" : "\"...\"";
+                }
+                return "\"PLACEHOLDER\"";
         }
     }
 
-    // Convert range to table for sortable columns
-    var tableName = "ApiEndpointsTable";
-    var tableRange = worksheet.Cells[1, 1, currentRow - 1, 6];
-    var table = worksheet.Tables.Add(tableRange, tableName);
-    table.ShowHeader = true;
-    table.ShowFilter = true;
-    table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium2;
-
-    // Auto-fit columns
-    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-
-    // Apply conditional formatting for the entire row based on "Needs Token" column
-    for (int row = 2; row < currentRow; row++)
-    {
-        var rowRange = worksheet.Cells[row, 1, row, 6];
-        var condition = worksheet.ConditionalFormatting.AddExpression(rowRange);
-        condition.Formula = $"$C{row}=\"Yes\"";
-        condition.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-        var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes", StringComparison.OrdinalIgnoreCase) ;
-        condition.Style.Fill.BackgroundColor.Color = needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
-    }
-
-    // Save the Excel file
-    var filePath = repositoryAnalysis?.GetExcelPath();
-    if (filePath != null)
-    {
-        var fileInfo = new FileInfo(filePath);
-        await package.SaveAsAsync(fileInfo);
-    }
-}
-
-
     
-
-    private async Task<Compilation> CreateCompilationAsync(string[] filePaths)
+    
+    public async Task<Compilation> CreateCompilationAsync(string[] filePaths)
     {
         var syntaxTrees = new List<SyntaxTree>();
         var options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp9);
@@ -232,8 +385,9 @@ public class RepositoryService
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
             // Add other necessary references
         };
-
+        _logger.LogInformation("Created compilation for {FileCount} files", filePaths.Length);
         return CSharpCompilation.Create("Analysis", syntaxTrees, references);
+
     }
 
     private bool IsLikelyApiEndpoint(MethodDeclarationSyntax method)
@@ -260,9 +414,9 @@ public class RepositoryService
                 attrList.Attributes.Any(attr =>
                     new[] { "FromBody", "FromQuery", "FromRoute", "FromHeader", "FromForm" }
                         .Any(paramAttr => attr.Name.ToString().Contains(paramAttr)))));
-
-
+        
         return hasHttpOrRouteAttribute || hasApiReturnType || hasApiParameterAttributes;
+        
     }
 
 
@@ -277,6 +431,8 @@ public class RepositoryService
         // If no prefix was found in the code, attempt to extract it from appsettings.json.
         var apiPrefixFromAppSettings = GetApiPrefixFromAppSettings(repositoryAnalysis);
 
+        _logger.LogInformation("API prefix from code: {ApiPrefixFromCode}, API prefix from appsettings.json: {ApiPrefixFromAppSettings}",
+            apiPrefixFromCode, apiPrefixFromAppSettings);
         // Return the prefix found in appsettings.json, or an empty string if none was found.
         return apiPrefixFromAppSettings ?? string.Empty;
     }
@@ -366,18 +522,27 @@ public class RepositoryService
 
         if (IsRunningInContainer())
             // For Docker or containerized environments, use a path that's expected to be a volume mount.
+        {
             basePath = "/var/appdata";
+            _logger.LogInformation("Running in a container, using path: {BasePath}", basePath);
+        }
         else if (IsRunningInCloudEnvironment())
+        {
             // For cloud environments like Azure or AWS, you might decide based on environment variables.
             basePath = Environment.GetEnvironmentVariable("CLOUD_STORAGE_PATH") ??
                        Path.Combine(_env.ContentRootPath, "Data");
+            _logger.LogInformation("Running in a cloud environment, using path: {BasePath}", basePath);
+        }
         else
             // For local development or unsupported environments, use a local path relative to the content root.
+        {
             basePath = Path.Combine(_env.ContentRootPath, "Data");
-
-
+            _logger.LogInformation("Running in a local environment, using path: {BasePath}", basePath);
+        }
+        
         var parentDirectory = Directory.GetParent(_env.ContentRootPath)?.Parent?.FullName;
         var repositoryDownloadPath = Path.Combine(parentDirectory, "Repos", modelName, branchName);
+        _logger.LogInformation("Using repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
         return repositoryDownloadPath;
     }
 
@@ -389,6 +554,7 @@ public class RepositoryService
 
     private bool IsRunningInCloudEnvironment()
     {
+        
         // Implement checks for cloud environments. This can be based on specific environment variables
         // that cloud providers set, for example, WEBSITE_INSTANCE_ID for Azure App Services.
         return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID")) ||
