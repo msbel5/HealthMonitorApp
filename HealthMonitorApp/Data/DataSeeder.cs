@@ -74,7 +74,8 @@ public class DataSeeder(
                     ServiceStatusId = serviceStatus.Id,
                     Annotations = apiEndpointExt.Annotations,
                     IsAuthorized = isAuthorizedApiEndpoint,
-                    IsOpen = isOpenApiEndpoint
+                    IsOpen = isOpenApiEndpoint,
+                    Parameters = apiEndpointExt.Parameters
                 };
 
                 context.ApiEndpoints.Add(apiEndpoint);

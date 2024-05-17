@@ -3,65 +3,154 @@ using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
-using Microsoft.AspNetCore.Components;
+using System.Web; 
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HealthMonitorApp.Tools;
 
 public class CurlConstructor(RepositoryService repositoryService, ApplicationDbContext context)
 {
 
-public async Task<string> ConstructCurlCommand(ApiGroup apiGroup, ApiEndpoint apiEndpoint,
-        RepositoryAnalysis repositoryAnalysis)
+    public async Task<string> ConstructCurlCommand(ApiGroup apiGroup, ApiEndpoint apiEndpoint, RepositoryAnalysis repositoryAnalysis)
     {
-        // Obtain the API prefix asynchronously and ensure it's correctly formatted
         var apiPrefix = await repositoryService.GetCombinedApiPrefixAsync(repositoryAnalysis);
         apiPrefix = string.IsNullOrEmpty(apiPrefix) ? "" : $"{apiPrefix.Trim('/')}/";
 
-        // Extract route from controller annotations if available
         var controllerRoute = GetControllerRouteAnnotation(apiGroup);
         var routePrefix = string.IsNullOrEmpty(controllerRoute) ? "" : $"{controllerRoute.Trim('/')}/";
-        
-        // Construct the base URL
+
         var baseUrl = repositoryAnalysis.BaseUrl?.TrimEnd('/') ?? "localhost";
-
-        // Sanitize apiGroupName to remove "Controller" suffix and adjust apiEndpoint.Name as necessary
         var sanitizedApiGroupName = apiGroup.Name.Replace("Controller", "");
-
-        // Construct the full URL incorporating the base URL, API prefix, controller name, and endpoint name
-        var fullUrl = $"{baseUrl}/{apiPrefix}{routePrefix}{sanitizedApiGroupName}/{apiEndpoint.Name}".TrimEnd('/');
-
-        // Extract the HTTP method from annotations, default to GET if not specified or found
+        var fullUrl = new StringBuilder($"{baseUrl}/{apiPrefix}{routePrefix}{sanitizedApiGroupName}/{apiEndpoint.Name}".TrimEnd('/'));
         var httpMethod = ExtractHttpMethod(apiEndpoint.Annotations);
+        var commandBuilder = new StringBuilder($"curl -X {httpMethod} ");
 
-        // Initialize the commandBuilder with the cURL command
-        var commandBuilder = new StringBuilder($"curl -X {httpMethod} \"{fullUrl}\"");
+        var formData = new List<string>();
+        bool hasQueryParameters = false;
+        bool isJsonRequired = false;
 
-        // Append headers for JSON content type if expected
-        if (apiEndpoint.Annotations?.Contains("expectsJson") == true)
-            commandBuilder.Append(" -H \"Content-Type: application/json\"");
+        foreach (var parameter in JArray.Parse(apiEndpoint.Parameters))
+        {
+            var paramName = parameter["Name"].ToString();
+            var paramSource = parameter["Source"].ToString();
+            var isComplex = parameter["IsComplex"]?.ToObject<bool>() ?? false;
+
+            if (isComplex)
+            {
+                var properties = parameter["Properties"] as JArray;
+                FlattenComplexType(paramName, properties, formData);
+            }
+            else
+            {
+                var defaultValue = parameter["DefaultValue"].ToString();
+                if (paramSource == "body")
+                {
+                    isJsonRequired = true;
+                }
+                AddFormData(paramName, defaultValue, paramSource, formData, ref hasQueryParameters, fullUrl);
+            }
+        }
+
+        if (formData.Count > 0)
+        {
+            if (isJsonRequired)
+            {
+                commandBuilder.Append($"--header \"Content-Type: application/json\" --data '{string.Join("&", formData)}' ");
+            }
+            else
+            {
+                commandBuilder.Append($"--header \"Content-Type: application/x-www-form-urlencoded\" {string.Join(" ", formData)} ");
+            }
+        }
+
+        commandBuilder.Append($"\"{fullUrl}\"");
 
         var variables = await context.Variables
             .Where(rav => rav.RepositoryAnalysisId == repositoryAnalysis.Id)
             .ToListAsync();
 
-
-        // Include authorization token if available
         foreach (var rav in variables)
         {
-            // Assuming context.Variables is properly set up to include Variables in your context
             var variable = await context.Variables.FindAsync(rav.Id);
             if (variable != null)
             {
-                var decryptedValue =
-                    variable.DecryptVariable(); // Assuming this method exists and returns the decrypted value
-                // Append each variable as a header. Assuming variable.Name holds the header name.
-                commandBuilder.Append($" -H \"{variable.Name}: {decryptedValue}\"");
+                var decryptedValue = variable.DecryptVariable();
+                commandBuilder.Append($"--header \"{variable.Name}: {decryptedValue}\" ");
             }
         }
 
         return commandBuilder.ToString();
     }
+
+    private void FlattenComplexType(string parentName, JArray properties, List<string> formData)
+    {
+        foreach (var property in properties)
+        {
+            var propertyName = property["Name"].ToString();
+            var defaultValue = property["DefaultValue"].ToString();
+            
+            var isComplex = property["IsComplex"]?.ToObject<bool>()  ?? false;
+            
+
+            var flattenedName = $"{parentName}.{propertyName}";
+            bool temp = false;
+
+            // Check if the default value is a JSON string
+            if (IsJsonString(defaultValue))
+            {
+                var jsonObject = JObject.Parse(defaultValue);
+                foreach (var prop in jsonObject.Properties())
+                {
+                    FlattenComplexType(flattenedName, JArray.FromObject(new[] { new { Name = prop.Name, DefaultValue = prop.Value.ToString(), IsComplex = IsJsonString(prop.Value.ToString()) } }), formData);
+                }
+            }
+            else if (isComplex)
+            {
+                var nestedProperties = property["Properties"] as JArray;
+                FlattenComplexType(flattenedName, nestedProperties, formData);
+            }
+            else
+            {
+                AddFormData(flattenedName, defaultValue, "body", formData, ref temp);
+            }
+        }
+    }
+
+
+    private void AddFormData(string paramName, string defaultValue, string paramSource, List<string> formData, ref bool hasQueryParameters, StringBuilder fullUrl = null)
+    {
+        var flatParamName = paramName.Contains('.') ? paramName.Substring(paramName.IndexOf('.') + 1) : paramName;
+
+        switch (paramSource)
+        {
+            case "query":
+                if (fullUrl != null)
+                {
+                    if (!hasQueryParameters)
+                    {
+                        fullUrl.Append("?");
+                        hasQueryParameters = true;
+                    }
+                    else
+                    {
+                        fullUrl.Append("&");
+                    }
+                    fullUrl.Append($"{flatParamName}={defaultValue}");
+                }
+                break;
+            case "header":
+                formData.Add($"--header \"{flatParamName}: {defaultValue}\" ");
+                break;
+            default:
+                formData.Add($"--data-urlencode '{flatParamName}={(defaultValue)}'");
+                break;
+        }
+    }
+
+
+
 
     private string GetControllerRouteAnnotation(ApiGroup apiGroup)
     {
@@ -113,18 +202,11 @@ public async Task<string> ConstructCurlCommand(ApiGroup apiGroup, ApiEndpoint ap
 
         return "GET"; // Default to GET if no specific HTTP method annotation is found
     }
-
     
-    private string ExtractHttpMethodOld(string annotations)
+    private bool IsJsonString(string value)
     {
-        if (string.IsNullOrEmpty(annotations)) return "GET";
-
-        var httpMethodAnnotation = annotations.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault(a => a.StartsWith("Http"));
-
-        if (httpMethodAnnotation != null) return httpMethodAnnotation.Replace("Http", "").ToUpper();
-
-        return "GET"; // Default to GET if no specific HTTP method annotation is found
+        value = value.Trim();
+        return (value.StartsWith("{") && value.EndsWith("}")) || (value.StartsWith("[") && value.EndsWith("]"));
     }
 
 

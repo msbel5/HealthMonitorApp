@@ -97,48 +97,6 @@ public class GitVcsProvider : IVcsProvider
         
     }
     
-    public async Task UpdateRepositoryAsyncOld(RepositoryAnalysis? repositoryAnalysis)
-    {
-        var username = string.Empty;
-        var password = string.Empty;
-        if (!string.IsNullOrEmpty(repositoryAnalysis.EncryptedUsername) &&
-            !string.IsNullOrEmpty(repositoryAnalysis.EncryptedPassword))
-        {
-            username = repositoryAnalysis.DecryptCredentials().Username;
-            password = repositoryAnalysis.DecryptCredentials().Password;
-        }
-
-        // Ensure the directory exists and is a git repository
-        if (Directory.Exists(repositoryAnalysis.Path) &&
-            Directory.Exists(Path.Combine(repositoryAnalysis.Path, ".git")))
-        {
-            // Prepare git pull command with credentials if provided
-            var gitPullCommand = !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password)
-                ? $"-c http.extraheader=\"AUTHORIZATION: basic {Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"))}\" pull origin {repositoryAnalysis.Branch}"
-                : $"pull origin {repositoryAnalysis.Branch}";
-
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "git",
-                    Arguments = gitPullCommand,
-                    WorkingDirectory = repositoryAnalysis.Path,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            await process.WaitForExitAsync();
-        }
-        else
-        {
-            throw new InvalidOperationException("The specified path does not exist or is not a git repository.");
-        }
-    }
-
 
     public async Task CheckCommitHashAsync(RepositoryAnalysis repositoryAnalysis)
     {

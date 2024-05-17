@@ -20,4 +20,6 @@ public class ApiEndpoint
     public bool? IsOpen { get; set; }
     public string? Annotations { get; set; }
     
+    public string? Parameters { get; set; }
+    
 }

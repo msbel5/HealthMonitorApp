@@ -552,3 +552,4 @@ C:/Users/msbel/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Debug/net8.0/
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Debug/net8.0/HealthMonitorApp.pdb
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Debug/net8.0/HealthMonitorApp.genruntimeconfig.cache
 /Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/obj/Debug/net8.0/ref/HealthMonitorApp.dll
+/Users/n100166/RiderProjects/HealthMonitorApp/HealthMonitorApp/bin/Debug/net8.0/backupOutput.json

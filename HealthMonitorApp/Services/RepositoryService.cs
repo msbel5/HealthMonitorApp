@@ -190,7 +190,8 @@ public class RepositoryService
                         Name = method.Identifier.Text,
                         IsAuthorized = isMethodAuthorized,
                         IsOpen = !isMethodAuthorized || isMethodOpen,
-                        Annotations = methodAnnotationsListed
+                        Annotations = methodAnnotationsListed,
+                        Parameters = JsonConvert.SerializeObject(ExtractMethodParameters(method, semanticModel), Formatting.None)
                     };
 
                     apiGroup.ApiEndpoints.Add(apiEndPoint);
@@ -225,70 +226,12 @@ public class RepositoryService
         }
         
 
-        var json = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
+        var json = JsonConvert.SerializeObject(apiGroups, Formatting.None);
         _logger.LogInformation("Extracted {ApiGroupCount} API groups and {ApiEndpointCount} endpoints", apiGroups.Count , apiGroups.Sum(g => g.ApiEndpoints.Count));
         _logger.LogDebug("Extracted API groups and endpoints: {Json}", json);
         return json;
     }
     
-    public async Task<string> ExtractControllersAndEndpointsAsDynamicJsonAsync(RepositoryAnalysis repositoryAnalysis)
-    {
-        var apiGroups = new JArray();
-        var allFiles = Directory.GetFiles(repositoryAnalysis.Path, "*.cs", SearchOption.AllDirectories);
-        var compilation = await CreateCompilationAsync(allFiles);
-        _logger.LogInformation("Extracting controllers and endpoints from {FileCount} files", allFiles.Length);
-
-        foreach (var tree in compilation.SyntaxTrees)
-        {
-            var semanticModel = compilation.GetSemanticModel(tree);
-            var root = tree.GetRoot();
-
-            var controllers = root.DescendantNodes().OfType<ClassDeclarationSyntax>()
-                .Where(node => node.BaseList?.Types.Any(type => type.ToString().Contains("Controller")) ?? false);
-
-            foreach (var controller in controllers)
-            {
-                var apiGroup = new JObject
-                {
-                    ["Name"] = controller.Identifier.Text,
-                    ["IsAuthorized"] = controller.AttributeLists.SelectMany(attrList => attrList.Attributes).Any(attr => attr.Name.ToString().Contains("Authorize"))
-                };
-
-                var endpoints = new JArray();
-                foreach (var method in controller.Members.OfType<MethodDeclarationSyntax>())
-                {
-                    if (!IsLikelyApiEndpoint(method)) continue;
-
-                    var endpoint = new JObject
-                    {
-                        ["Name"] = method.Identifier.Text,
-                        ["IsAuthorized"] = method.AttributeLists.SelectMany(attr => attr.Attributes).Any(attr => attr.Name.ToString().Contains("Authorize")),
-                        ["Method"] = ExtractHttpMethod(method),
-                        ["Parameters"] = ExtractMethodParameters(method, semanticModel)
-                    };
-
-                    endpoints.Add(endpoint);
-                }
-
-                apiGroup["Endpoints"] = endpoints;
-                apiGroups.Add(apiGroup);
-            }
-        }
-
-        var result = JsonConvert.SerializeObject(apiGroups, Formatting.Indented);
-        _logger.LogInformation("Extracted API groups and endpoints: {Json}", result);
-        return result;
-    }
-
-
-    private string ExtractHttpMethod(MethodDeclarationSyntax method)
-    {
-        var attribute = method.AttributeLists
-            .SelectMany(attrList => attrList.Attributes)
-            .FirstOrDefault(attr => attr.Name.ToString().Contains("Http"));
-
-        return attribute?.Name.ToString().Replace("Http", "") ?? "GET";
-    }
 
     private JArray ExtractMethodParameters(MethodDeclarationSyntax method, SemanticModel model)
     {
@@ -300,14 +243,15 @@ public class RepositoryService
             {
                 ["Name"] = parameter.Identifier.Text,
                 ["Type"] = typeInfo.Type?.ToString(),
-                ["Source"] = DetermineParameterSource(parameter)
+                ["Source"] = DetermineParameterSource(parameter),
+                ["DefaultValue"] = GetDefaultValueForType(typeInfo.Type, model)
             };
 
+            // Check if the parameter is a complex type
             if (typeInfo.Type is INamedTypeSymbol namedTypeSymbol && !namedTypeSymbol.IsValueType && namedTypeSymbol.Name != "String")
             {
-                // Assume complex types are used in the body unless annotated otherwise
                 paramObj["IsComplex"] = true;
-                paramObj["Properties"] = ExtractPropertiesFromComplexType(namedTypeSymbol, model);
+                paramObj["Properties"] = ExtractTopLevelProperties(namedTypeSymbol, model);
             }
 
             parameters.Add(paramObj);
@@ -315,6 +259,26 @@ public class RepositoryService
 
         return parameters;
     }
+
+    private JArray ExtractTopLevelProperties(INamedTypeSymbol typeSymbol, SemanticModel model)
+    {
+        var properties = new JArray();
+        foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
+        {
+            if (property.DeclaredAccessibility == Accessibility.Public && !property.Type.ToString().Contains("?") && !IsCollectionType(property.Type))
+            {
+                properties.Add(new JObject
+                {
+                    ["Name"] = property.Name,
+                    ["Type"] = property.Type.ToString(),
+                    ["DefaultValue"] = GetDefaultValueForType(property.Type, model)
+                });
+            }
+        }
+        return properties;
+    }
+
+    
 
     private string DetermineParameterSource(ParameterSyntax parameter)
     {
@@ -325,48 +289,111 @@ public class RepositoryService
         return sourceAttribute?.Name.ToString().Replace("From", "").ToLower() ?? "query";
     }
 
+
     private JArray ExtractPropertiesFromComplexType(INamedTypeSymbol typeSymbol, SemanticModel model)
     {
         var properties = new JArray();
         foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
         {
-            properties.Add(new JObject
+            var propertyObj = new JObject
             {
                 ["Name"] = property.Name,
                 ["Type"] = property.Type.ToString(),
-                ["DefaultValue"] = GetDefaultValueForType(property.Type)
-            });
+                ["DefaultValue"] = GetDefaultValueForType(property.Type, model)
+            };
+
+            // Recursively extract properties if the property itself is a complex type
+            if (property.Type is INamedTypeSymbol nestedTypeSymbol && !nestedTypeSymbol.IsValueType && nestedTypeSymbol.Name != "String")
+            {
+                propertyObj["IsComplex"] = true;
+                propertyObj["Properties"] = ExtractPropertiesFromComplexType(nestedTypeSymbol, model);
+            }
+
+            properties.Add(propertyObj);
         }
         return properties;
     }
 
-    private string GetDefaultValueForType(ITypeSymbol type)
+
+
+
+    private string GetDefaultValueForType(ITypeSymbol type, SemanticModel model)
     {
-        // Simplified example, enhance as needed
         switch (type.SpecialType)
         {
             case SpecialType.System_String:
-                return "\"PLACEHOLDER\"";
+                return "placeholder";
             case SpecialType.System_Int32:
             case SpecialType.System_Decimal:
-                return "0";
+                return "200";
             case SpecialType.System_Boolean:
                 return "false";
             case SpecialType.System_DateTime:
-                return "\"2024-01-01T00:00:00Z\"";
+                return "2024-01-01T00:00:00Z";
             default:
-                // Handling enum by getting the first value or defaulting if no values are present
+                if (type.ToString() == "System.Guid")
+                    return "00000000-0000-0000-0000-00000000000";
                 if (type.TypeKind == TypeKind.Enum)
                 {
-                    // Check if the type is an enum and get the first defined enum value or a default placeholder
                     var enumType = type as INamedTypeSymbol;
                     var firstEnumMember = enumType.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(e => e.IsStatic && e.HasConstantValue);
-                    return firstEnumMember != null ? "\"" + firstEnumMember.ConstantValue.ToString() + "\"" : "\"...\"";
+                    return firstEnumMember != null ? "" + firstEnumMember.ConstantValue.ToString() + "" : "";
                 }
-                return "\"PLACEHOLDER\"";
+                if (IsComplexType(type) && IsEssentialComplexProperty(type, model))
+                {
+                    return CreateSimplifiedObjectForViewModel(type as INamedTypeSymbol, model);
+                }
+                return "placeholder";
         }
     }
 
+// Helper to determine if a type is complex and essential
+    private bool IsComplexType(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol namedType && !namedType.IsValueType && namedType.Name != "String";
+    }
+
+// Decide if a complex type property should be included based on its public nature and simplicity
+    private bool IsEssentialComplexProperty(ITypeSymbol type, SemanticModel model)
+    {
+        var namedType = type as INamedTypeSymbol;
+        if (namedType == null) return false;
+
+        foreach (var property in namedType.GetMembers().OfType<IPropertySymbol>())
+        {
+            // Check if the property is public, non-nullable, and not a collection
+            if (property.DeclaredAccessibility == Accessibility.Public && 
+                !property.Type.ToString().Contains("?") && 
+                !IsCollectionType(property.Type))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Check if the type is a collection
+    private bool IsCollectionType(ITypeSymbol type)
+    {
+        return type.AllInterfaces.Any(i => i.Name == "IEnumerable") && type.Name != "String";
+    }
+
+    
+    // Generate a simplified JSON object for essential complex types
+    private string CreateSimplifiedObjectForViewModel(INamedTypeSymbol typeSymbol, SemanticModel model)
+    {
+        JObject simplifiedObject = new JObject();
+        foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
+        {
+            if (property.DeclaredAccessibility == Accessibility.Public &&
+                !property.Type.ToString().Contains("?") &&
+                !IsCollectionType(property.Type))
+            {
+                simplifiedObject[property.Name] = GetDefaultValueForType(property.Type, model);
+            }
+        }
+        return JsonConvert.SerializeObject(simplifiedObject, Formatting.None);
+    }
     
     
     public async Task<Compilation> CreateCompilationAsync(string[] filePaths)
@@ -541,7 +568,8 @@ public class RepositoryService
         }
         
         var parentDirectory = Directory.GetParent(_env.ContentRootPath)?.Parent?.FullName;
-        var repositoryDownloadPath = Path.Combine(parentDirectory, "Repos", modelName, branchName);
+        var tempPath = Path.GetTempPath();
+        var repositoryDownloadPath = Path.Combine(tempPath, "Repos", modelName, branchName);
         _logger.LogInformation("Using repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
         return repositoryDownloadPath;
     }
