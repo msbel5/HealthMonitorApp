@@ -78,13 +78,7 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
     private async Task<string> AnalyzeWithAppInspectorAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var applicationInspector = GetApplicationInspectorPath();
-
-
-        var parentDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.FullName;
-
-        // Construct the path for repositories to be beside the project directory
-        var repositoryDownloadPath = Path.Combine(parentDirectory, RepoPath, repositoryAnalysis.Name);
-
+        
 
         var arguments = $"analyze -s \"{repositoryAnalysis.Path}\" -f json"; // Use the absolute path
         var process = new Process

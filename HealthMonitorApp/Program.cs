@@ -106,4 +106,4 @@ lifetime.ApplicationStarted.Register(() =>
     }
 });
 
-app.Run();
+app.Run("http://0.0.0.0:8080");

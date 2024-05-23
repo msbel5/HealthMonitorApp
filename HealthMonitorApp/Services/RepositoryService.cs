@@ -567,7 +567,6 @@ public class RepositoryService
             _logger.LogInformation("Running in a local environment, using path: {BasePath}", basePath);
         }
         
-        var parentDirectory = Directory.GetParent(_env.ContentRootPath)?.Parent?.FullName;
         var tempPath = Path.GetTempPath();
         var repositoryDownloadPath = Path.Combine(tempPath, "Repos", modelName, branchName);
         _logger.LogInformation("Using repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
