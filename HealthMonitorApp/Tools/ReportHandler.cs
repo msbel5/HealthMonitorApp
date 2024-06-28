@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Tools;
 
-public class ReportHandler(RepositoryService repositoryService ) {
-
+public class ReportHandler(RepositoryService repositoryService)
+{
     public async Task ModifyAndSaveReport(RepositoryAnalysis? repositoryAnalysis)
     {
         var endpointJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
@@ -59,7 +59,7 @@ public class ReportHandler(RepositoryService repositoryService ) {
         var navbarBrand = document.DocumentNode.SelectSingleNode("//span[@class='navbar-brand']");
         if (navbarBrand != null) navbarBrand.InnerHtml = repositoryName;
     }
-    
+
 
     private void AddEndpointSummary(List<ApiGroup> apiGroups, HtmlDocument document)
     {
@@ -69,7 +69,7 @@ public class ReportHandler(RepositoryService repositoryService ) {
             overviewSection.RemoveAllChildren();
 
             var endpointOverview = new StringBuilder("<h2>Endpoint Summary</h2><div class='list-group'>");
-            
+
             foreach (var apiGroup in apiGroups)
             {
                 var controllerColor = apiGroup.IsAuthorized != null && apiGroup.IsAuthorized.Value

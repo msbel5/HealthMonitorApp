@@ -20,7 +20,7 @@ public class ApiGroupController : Controller
     public IActionResult Index()
     {
         var apiGroups = _context.ApiGroups.Include(a => a.RepositoryAnalysis).ToList();
-        
+
         return View(_context.ApiGroups.ToList());
     }
 
@@ -36,7 +36,6 @@ public class ApiGroupController : Controller
     public async Task<IActionResult> Create([Bind("ApiGroup, Variables")] ApiGroupViewModel apiGroupViewModel)
     {
         if (ModelState.IsValid)
-        {
             try
             {
                 var apiGroup = apiGroupViewModel.ApiGroup;
@@ -47,17 +46,22 @@ public class ApiGroupController : Controller
                 {
                     foreach (var variableViewModel in apiGroupViewModel.Variables)
                     {
-                        var encryptedValue = Variable.EncryptVariable(variableViewModel.Value); // Assuming EncryptVariable is a static method or accessible here
+                        var encryptedValue =
+                            Variable.EncryptVariable(variableViewModel
+                                .Value); // Assuming EncryptVariable is a static method or accessible here
                         var apiGroupVariable = new Variable
                         {
                             ApiGroupId = apiGroup.Id, // Use the generated Id from the saved ApiGroup
                             Name = variableViewModel.Name,
                             Value = encryptedValue
                         };
-                        _context.Variables.Add(apiGroupVariable); // Assuming your DbContext has a DbSet for ApiGroupVariables
+                        _context.Variables.Add(
+                            apiGroupVariable); // Assuming your DbContext has a DbSet for ApiGroupVariables
                     }
+
                     await _context.SaveChangesAsync();
                 }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -65,11 +69,11 @@ public class ApiGroupController : Controller
                 // Log the exception (ex) here or show an error message to the user
                 ModelState.AddModelError("", "An error occurred while creating the API Group.");
             }
-        }
+
         // If we got this far, something failed, redisplay form
         return View(apiGroupViewModel);
     }
-    
+
     // GET: Edit ApiGroup
     public async Task<IActionResult> Edit(Guid id)
     {
@@ -79,8 +83,8 @@ public class ApiGroupController : Controller
             .Where(v => v.ApiGroupId == id)
             .ToListAsync();
         var variableIds = apiGroupVariables.Select(v => v.Id).ToList();
-        List<Variable> variables= _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
-        ApiGroupViewModel apiGroupViewModel = new ApiGroupViewModel
+        List<Variable> variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
+        var apiGroupViewModel = new ApiGroupViewModel
         {
             ApiGroup = apiGroup,
             Variables = variables
@@ -94,7 +98,6 @@ public class ApiGroupController : Controller
     {
         if (id != apiGroupViewModel.ApiGroup.Id) return NotFound();
         if (ModelState.IsValid)
-        {
             try
             {
                 _context.Update(apiGroupViewModel.ApiGroup); // Update the ApiGroup information
@@ -104,12 +107,9 @@ public class ApiGroupController : Controller
                     .ToListAsync();
                 // Handle removed variables
                 foreach (var existingVariable in existingVariables)
-                {
                     if (!apiGroupViewModel.Variables.Any(v => v.Id == existingVariable.Id))
-                    {
-                        _context.Variables.Remove(existingVariable); // Remove variables not present in the submitted list
-                    }
-                }
+                        _context.Variables
+                            .Remove(existingVariable); // Remove variables not present in the submitted list
                 // Handle added or updated variables
                 foreach (var variable in apiGroupViewModel.Variables)
                 {
@@ -133,30 +133,27 @@ public class ApiGroupController : Controller
                         _context.Variables.Add(newVariable);
                     }
                 }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!ApiGroupExists(apiGroupViewModel.ApiGroup.Id))
-                {
                     return NotFound();
-                }
                 else
-                {
                     throw;
-                }
             }
             catch (Exception ex)
             {
                 // Log the exception or handle it as needed
                 ModelState.AddModelError("", "An error occurred while updating the API Group.");
             }
-        }
+
         // If we got this far, something failed, redisplay form
         return View(apiGroupViewModel);
     }
-    
+
     public async Task<IActionResult> Details(Guid id)
     {
         var apiGroup = await _context.ApiGroups.FindAsync(id);
@@ -165,8 +162,8 @@ public class ApiGroupController : Controller
             .Where(v => v.ApiGroupId == id)
             .ToListAsync();
         var variableIds = apiGroupVariables.Select(v => v.Id).ToList();
-        List<Variable> variables= _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
-        ApiGroupViewModel apiGroupViewModel = new ApiGroupViewModel
+        List<Variable> variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
+        var apiGroupViewModel = new ApiGroupViewModel
         {
             ApiGroup = apiGroup,
             Variables = variables
@@ -179,7 +176,7 @@ public class ApiGroupController : Controller
     public async Task<IActionResult> Delete(Guid id)
     {
         var apiGroup = await _context.ApiGroups
-            .Include(g => g.ApiEndpoints) 
+            .Include(g => g.ApiEndpoints)
             .ThenInclude(ae => ae.ServiceStatus)
             .FirstOrDefaultAsync(g => g.Id == id);
 
@@ -228,11 +225,9 @@ public class ApiGroupController : Controller
             return Json(new { success = false, message = "Failed to fetch token." });
         }
     }
-    
+
     private bool ApiGroupExists(Guid id)
     {
         return _context.ApiGroups.Any(e => e.Id == id);
     }
-    
-    
 }

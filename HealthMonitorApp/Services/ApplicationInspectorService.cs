@@ -11,15 +11,15 @@ using Tools;
 public class ApplicationInspectorService(RepositoryService repositoryService, ReportHandler reportHandler)
 {
     private const string RepoPath = "Repos";
-    private readonly Logger<ApplicationInspectorService> _logger = new Logger<ApplicationInspectorService>(new LoggerFactory());
-    
+    private readonly Logger<ApplicationInspectorService> _logger = new(new LoggerFactory());
+
     public async Task<RepositoryAnalysis?> AnalyzeAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var updatedAnalysis = await AnalyzeRepositoryAsync(repositoryAnalysis);
-        
+
         updatedAnalysis = await AnalyzeRepositoryForEndpointsAsync(updatedAnalysis);
         _logger.LogInformation("Analysis completed for {RepositoryName}", updatedAnalysis.Name);
-        
+
         await GenerateReportAsync(updatedAnalysis);
         _logger.LogInformation("Report generated for {RepositoryName}", updatedAnalysis.Name);
         await reportHandler.ModifyAndSaveReport(updatedAnalysis);
@@ -35,7 +35,7 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
             await InstallAppInspectorAsync();
         }
     }
-    
+
     private async Task<bool> IsAppInspectorInstalledAsync()
     {
         var process = new Process
@@ -72,13 +72,12 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
 
         process.Start();
         await process.WaitForExitAsync();
-        
     }
 
     private async Task<string> AnalyzeWithAppInspectorAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var applicationInspector = GetApplicationInspectorPath();
-        
+
 
         var arguments = $"analyze -s \"{repositoryAnalysis.Path}\" -f json"; // Use the absolute path
         var process = new Process
@@ -125,7 +124,6 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
 
         return updatedAnalysis;
     }
-    
 
 
     private RepositoryAnalysis? ParseAnalysisResult(string analysisResult, RepositoryAnalysis? repositoryAnalysis)
@@ -143,6 +141,7 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
             // If no JSON structure is found, you might want to log an error or assign a default value
             repositoryAnalysis.BaseUrl = "{no valid json}"; // Assigning an empty JSON object as a default
         }
+
         _logger.LogInformation("Analysis result parsed for {RepositoryName}", repositoryAnalysis.Name);
         return repositoryAnalysis;
     }
@@ -152,7 +151,7 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
         // First, generate the JSON summary of controllers and endpoints
         var jsonSummary = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
         //excluded controllers and apienpoints
-            
+
         // Deserialize the JSON summary back into a list of ControllerInfo objects
         var controllersInfo = JsonConvert.DeserializeObject<List<ApiGroup>>(jsonSummary);
 
@@ -173,20 +172,19 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
     }
 
 
-
     public static async Task GenerateReportAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var logger = new Logger<ApplicationInspectorService>(new LoggerFactory());
         logger.LogInformation("Generating report for {RepositoryName}", repositoryAnalysis.Name);
         var applicationInspector = GetApplicationInspectorPath();
-        
+
         logger.LogInformation("Application Inspector path: {ApplicationInspectorPath}", applicationInspector);
 
         var arguments =
             $"analyze -s \"{repositoryAnalysis.Path}\" -o \"{repositoryAnalysis.GetReportPath()}\""; // Use the absolute path
-        
+
         logger.LogInformation("Arguments: {Arguments}", arguments);
-        
+
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -201,13 +199,14 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
         };
 
         logger.LogInformation("Starting Application Inspector process...");
-        
+
         try
         {
             process.Start();
             var result = await process.StandardOutput.ReadToEndAsync();
             var errors = await process.StandardError.ReadToEndAsync(); // Capture any errors
-            logger.LogInformation("Report generation continue for {RepositoryName} with {results} and {errors}", repositoryAnalysis.Name, result, errors);
+            logger.LogInformation("Report generation continue for {RepositoryName} with {results} and {errors}",
+                repositoryAnalysis.Name, result, errors);
             await process.WaitForExitAsync();
             logger.LogInformation("Report generated for {RepositoryName}", repositoryAnalysis.Name);
         }
@@ -225,6 +224,4 @@ public class ApplicationInspectorService(RepositoryService repositoryService, Re
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "appinspector.exe" : "appinspector";
         return applicationInspector;
     }
-    
-
 }

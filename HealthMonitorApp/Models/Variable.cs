@@ -5,11 +5,11 @@ namespace HealthMonitorApp.Models;
 public class Variable
 {
     public Guid Id { get; set; }
-    
+
     public string Name { get; set; }
-    
+
     public string Value { get; set; }
-    
+
     // References for hierarchy
     public Guid? ApiGroupId { get; set; }
     public ApiGroup? ApiGroup { get; set; }
@@ -19,11 +19,11 @@ public class Variable
 
 
     private string _value;
-    
-    public static string  EncryptVariable(string value)
+
+    public static string EncryptVariable(string value)
     {
         // Placeholder for encryption logic
-        var val=  Encrypt(value);
+        var val = Encrypt(value);
         return val;
     }
 

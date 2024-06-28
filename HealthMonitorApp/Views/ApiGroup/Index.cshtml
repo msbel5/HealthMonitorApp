@@ -32,12 +32,13 @@
         {
             <tr>
                 <td class="text-center">@group.Name</td>
-                @if ((group.RepositoryAnalysis != null))
+                @if (group.RepositoryAnalysis != null)
                 {
                     <td class="text-center">
                         @group.RepositoryAnalysis.Name
                     </td>
-                }else
+                }
+                else
                 {
                     <td class="text-center">N/A</td>
                 }

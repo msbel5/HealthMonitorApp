@@ -29,7 +29,7 @@
 </style>
 
 <form asp-action="Edit" id="apiGroupForm" style="max-width: 500px; margin: auto;">
-    <input type="hidden" asp-for="ApiGroup.Id" />
+    <input type="hidden" asp-for="ApiGroup.Id"/>
     <h2 style="text-align: center;">Edit API Group</h2>
 
     <div class="form-group">
@@ -42,7 +42,7 @@
 
     <h3 id="variablesTitle" style="text-align: center;">Variables</h3>
     <div id="variablesContainer">
-        @for (int i = 0; i < Model.Variables.Count; i++)
+        @for (var i = 0; i < Model.Variables.Count; i++)
         {
             <div class="variable-group d-flex align-items-center mb-2">
                 <input type="text" asp-for="Variables[i].Name" class="form-control" placeholder="Name"/> =

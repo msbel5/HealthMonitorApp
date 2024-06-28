@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Text;
+using HealthMonitorApp.Data;
+using HealthMonitorApp.Models;
 using Newtonsoft.Json;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -11,10 +13,12 @@ namespace HealthMonitorApp.Services;
 public class WarningService
 {
     private readonly ILogger<WarningService> _logger;
+    private readonly ApplicationDbContext _context;
 
-    public WarningService(ILogger<WarningService> logger)
+    public WarningService(ILogger<WarningService> logger, ApplicationDbContext context)
     {
         _logger = logger;
+        _context = context;
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string plainTextContent, string htmlContent)
@@ -47,7 +51,7 @@ public class WarningService
     {
         var apiUrl = "https://graph.facebook.com/v13.0/0539123125/messages"; // Replace with your API URL
         var accessToken =
-            "EAAKvFJLBgmABO9B5ZCUP44UvhgvYUwkHVQCPUoSoCjAS2yAbJL0FgrCLKNBYYDvZACZCrzyGwjXlFr9SnHfH2717DZChYIXXFfDOqdkVGzZAVeDe0czZA9ZB3u3nfBCZCeiPfuimJJLC1dUnHIQgd5dVinJg67Ion2UvDBeUSBS9gsk1pcRNDgC6ybw4TyDJZCxaiLsIYbGwQRm4ZCENJ4qFp2u5BjSK9oievz8stNEKadDgZDZD"; // Replace with your access token
+            ""; // Replace with your access token
 
         using var client = new HttpClient();
         var payload = new
@@ -72,20 +76,41 @@ public class WarningService
                 $"Failed to send WhatsApp message: {response.StatusCode}. {response.Content.ReadAsStringAsync().Result}");
     }
 
-    public async Task SendEmailViaExchangeAsync(string toEmail, string subject, string body)
+    public async Task SendEmailViaExchangeAsync(string subject, string body)
     {
-        var fromAddress = new MailAddress("muhammet.bel@testinium.com", "Health Monitor App");
+        
+        var toEmail = "muhammet.bel@testinium.com";
+        var username = "muhammet.bel@testinium.com";
+        var smtpServer = "smtp-mail.outlook.com";
+        var smtpPort = 587;
+        var password = "";
+
+        
+        
+        Settings? setting = _context.Settings.FirstOrDefault();
+
+        if (setting != null)
+        {
+            toEmail = setting.NotificationEmails;
+            username = setting.SmtpUsername;
+            password = setting.SmtpPassword;
+            smtpServer = setting.SmtpServer;
+            smtpPort = setting.SmtpPort;
+        }
+        
+        
+        var fromAddress = new MailAddress(username, "Health Monitor App");
         var toAddress = new MailAddress(toEmail);
 
         // Use manual settings as fallback
         var smtp = new SmtpClient
         {
-            Host = "smtp-mail.outlook.com",
-            Port = 587,
+            Host = smtpServer,
+            Port = smtpPort,
             EnableSsl = true,
             DeliveryMethod = SmtpDeliveryMethod.Network,
             UseDefaultCredentials = false,
-            Credentials = new NetworkCredential(fromAddress.Address, "Agustos2023*")
+            Credentials = new NetworkCredential(username, password)
         };
 
         using (var message = new MailMessage(fromAddress, toAddress)

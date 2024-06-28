@@ -21,7 +21,6 @@ public class AnalysisController : Controller
     private readonly ILogger<AnalysisController> _logger;
 
 
-
     public AnalysisController(ApplicationInspectorService inspectorService, VcsService vcsService,
         ApplicationDbContext dbContext, DataSeeder dataSeeder,
         RepositoryService repositoryService, ILogger<AnalysisController> logger)
@@ -47,8 +46,7 @@ public class AnalysisController : Controller
 
         return View("AnalysisResult", repositoryAnalysis);
     }
-    
-    
+
 
     [HttpGet]
     public IActionResult BaseMethod()
@@ -58,17 +56,16 @@ public class AnalysisController : Controller
     }
 
 
-
     [HttpGet]
     public IActionResult Create()
     {
         var model = new RepositoryCreateViewModel
         {
             // Populate the ApiGroups property
-            ApiGroups = _dbContext.ApiGroups.Select(g => new SelectListItem 
-            { 
-                Value = g.Id.ToString(), 
-                Text = g.Name 
+            ApiGroups = _dbContext.ApiGroups.Select(g => new SelectListItem
+            {
+                Value = g.Id.ToString(),
+                Text = g.Name
             }).ToList()
         };
         _logger.LogInformation("Create method called");
@@ -109,13 +106,12 @@ public class AnalysisController : Controller
             var repositoryDownloadPath =
                 _repositoryService.GetDynamicRepositoryStoragePath(model.Name, model.Branch ?? "master");
             _logger.LogInformation("Repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
-            
+
             if (!Directory.Exists(repositoryDownloadPath))
             {
                 Directory.CreateDirectory(repositoryDownloadPath);
                 _logger.LogInformation("Repository download path created");
             }
-            
 
 
             var newRepositoryAnalysis = new RepositoryAnalysis
@@ -142,51 +138,43 @@ public class AnalysisController : Controller
 
 
             if (model.SelectedApiGroupIds != null && model.SelectedApiGroupIds.Count > 0)
-            {
                 foreach (var groupId in model.SelectedApiGroupIds)
                 {
                     var apiGroup = await _dbContext.ApiGroups.FindAsync(groupId);
-                    if (apiGroup != null)
-                    {
-                        newRepositoryAnalysis.ApiGroups.Add(apiGroup);
-                    }
+                    if (apiGroup != null) newRepositoryAnalysis.ApiGroups.Add(apiGroup);
                 }
-            }
+
             _dbContext.RepositoryAnalysis.Add(newRepositoryAnalysis);
             await _dbContext.SaveChangesAsync();
 
             var variables = model.Variables;
             if (variables != null && variables.Count > 0)
-            {
-                foreach (Variable variable in variables)
+                foreach (var variable in variables)
                 {
                     var var = new Variable
                     {
                         Name = variable.Name,
                         Value = Variable.EncryptVariable(variable.Value),
-                        RepositoryAnalysisId = newRepositoryAnalysis.Id,
+                        RepositoryAnalysisId = newRepositoryAnalysis.Id
                     };
                     _dbContext.Variables.Add(var);
                     await _dbContext.SaveChangesAsync();
                 }
-            }
-            
+
             if (model.IntegrateEndpoints) await _dataSeeder.SeedDataFromRepository(newRepositoryAnalysis);
             return RedirectToAction("Index");
         }
-        
+
         foreach (var error in ViewData.ModelState.Values.SelectMany(modelState => modelState.Errors))
-        {
             // Log or inspect the error message
             _logger.LogError(error.ErrorMessage);
-        }
-        
+
         model.ApiGroups = _dbContext.ApiGroups.Select(g => new SelectListItem
         {
             Value = g.Id.ToString(),
             Text = g.Name
         }).ToList();
-        
+
         // If model state is not valid, show the form again with validation messages
         return View(model);
     }
@@ -237,7 +225,7 @@ public class AnalysisController : Controller
         var repositoryAnalysis = await _repositoryService.GetRepositoryAnalysisByIdAsync(id);
 
         if (repositoryAnalysis == null) return NotFound();
-        
+
 
         return PartialView("_DeleteConfirmation", repositoryAnalysis);
     }
@@ -275,7 +263,7 @@ public class AnalysisController : Controller
         var content = System.IO.File.ReadAllText(reportPath);
         return Content(content, "text/html");
     }
-    
+
     public IActionResult GetReportExcel(Guid id)
     {
         var repositoryAnalysis = _dbContext.RepositoryAnalysis.FirstOrDefault(ra => ra.Id == id);
@@ -287,7 +275,7 @@ public class AnalysisController : Controller
         if (!System.IO.File.Exists(reportPath)) return NotFound("Report not found.");
 
         var content = System.IO.File.ReadAllBytes(reportPath); // Read as byte array
-        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Path.GetFileName(reportPath)); 
+        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            Path.GetFileName(reportPath));
     }
-
 }

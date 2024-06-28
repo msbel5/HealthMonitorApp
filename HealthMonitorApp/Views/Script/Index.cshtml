@@ -1,0 +1,26 @@
+@{
+ViewData["Title"] = "Upload OpenAPI JSON";
+}
+
+<h2>Upload OpenAPI JSON</h2>
+
+@if (ViewBag.Error != null)
+{
+<div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form id="openApiForm" enctype="multipart/form-data" method="post" asp-action="UploadOpenApiJson">
+    <div class="form-group">
+        <label for="file">OpenAPI JSON File</label>
+        <input type="file" class="form-control" id="file" name="file">
+    </div>
+    <div class="form-group">
+        <label for="authorizationHeader">Authorization Header</label>
+        <input type="text" class="form-control" id="authorizationHeader" name="authorizationHeader">
+    </div>
+    <div class="form-group">
+        <label for="baseUrl">Base URL</label>
+        <input type="text" class="form-control" id="baseUrl" name="baseUrl">
+    </div>
+    <button type="submit" class="btn btn-primary">Upload and Generate Curl Script</button>
+</form>

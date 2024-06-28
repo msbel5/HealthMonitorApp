@@ -15,13 +15,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceStatusHistory> ServiceStatusHistories { get; set; }
     public DbSet<RepositoryAnalysis> RepositoryAnalysis { get; set; }
     public DbSet<Variable> Variables { get; set; }
-
+    public DbSet<Settings> Settings { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         // ServiceStatus to ApiEndpoint (One-to-One)
         modelBuilder.Entity<ServiceStatus>()
             .HasOne(ss => ss.ApiEndpoint)
@@ -49,7 +49,7 @@ public class ApplicationDbContext : DbContext
             .WithMany(ra => ra.ApiGroups)
             .HasForeignKey(ag => ag.RepositoryAnalysisId)
             .OnDelete(DeleteBehavior.SetNull);
-        
+
         // Relationship between ApiGroup and Variable
         modelBuilder.Entity<Variable>()
             .HasOne(v => v.ApiGroup)
@@ -64,9 +64,8 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(v => v.RepositoryAnalysisId)
             .OnDelete(DeleteBehavior.Restrict); // Adjust the DeleteBehavior as per your requirements
 
-        
+
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         optionsBuilder.EnableSensitiveDataLogging();
-
     }
 }

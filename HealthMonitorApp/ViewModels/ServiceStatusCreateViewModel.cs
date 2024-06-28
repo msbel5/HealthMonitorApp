@@ -13,13 +13,11 @@ public class ServiceStatusCreateViewModel
     [Range(100, 599, ErrorMessage = "Expected code must be a valid HTTP status code.")]
     public int ExpectedStatusCode { get; set; }
 
-    [Required]
-    public string cURL { get; set; }
+    [Required] public string cURL { get; set; }
 
     public string? AssertionScript { get; set; }
     public string? ApiGroupId { get; set; }
     public string? NewApiGroupName { get; set; }
 
     public List<ApiGroup>? ApiGroups { get; set; }
-    
 }

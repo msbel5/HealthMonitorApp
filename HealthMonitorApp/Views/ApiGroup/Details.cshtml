@@ -31,15 +31,15 @@
     <div class="detail-item">
         <span class="detail-title">Name:</span> @Model.ApiGroup.Name
     </div>
-    
+
     @if (Model.Variables.Count > 0)
     {
         <h5>Variables</h5>
-        
+
         foreach (var variable in Model.Variables)
         {
             <div class="detail-item">
-                <input style="text-align: center;" disabled="disabled" value="@variable.Name" class="text"/> = 
+                <input style="text-align: center;" disabled="disabled" value="@variable.Name" class="text"/> =
                 <input style="text-align: center;" disabled="disabled" type="password" class="encrypted-value" value="@variable.Value"/>
             </div>
         }

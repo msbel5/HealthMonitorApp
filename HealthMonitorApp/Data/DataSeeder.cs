@@ -17,10 +17,10 @@ public class DataSeeder(
     public Task SeedData()
     {
         if (!context.ServiceStatuses.Any()) SeedOnDeploy();
-        return Task.CompletedTask;
+        return  Task.CompletedTask;
     }
 
-    
+
     public async Task SeedDataFromRepository(RepositoryAnalysis repositoryAnalysis)
     {
         var repositoryData = await repositoryService.GetRepositoryAnalysisByUrlAsync(repositoryAnalysis.Url);
@@ -29,13 +29,14 @@ public class DataSeeder(
             logger.LogError("Failed to retrieve repository data");
             return;
         }
+
         var apiGroupsJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryData);
         var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(apiGroupsJson);
 
         if (apiGroups == null) return;
-        
+
         var curlConstructor = new CurlConstructor(repositoryService, context);
-        
+
         foreach (var apiGroupExt in apiGroups)
         {
             var isAuthorized = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
@@ -86,10 +87,13 @@ public class DataSeeder(
         }
     }
 
-    
+
     private async void SeedOnDeploy()
     {
         if (context.ServiceStatuses.Any()) return;
+        
+        await SeedSettingsOnDeploy();
+        
         await SeedDataFromCurlCommands();
         // 1. Create and add ApiGroups
         var googleGroup = new ApiGroup { Name = "Search Engines" };
@@ -114,8 +118,30 @@ public class DataSeeder(
             }
         };
 
+
         context.ServiceStatuses.AddRange(googleStatus);
         await context.SaveChangesAsync();
+        
+    }
+    
+    private async Task SeedSettingsOnDeploy()
+    {
+        if (!context.Settings.Any())
+        {
+                                    
+            var settings = new Settings
+            {
+                TestInterval = TimeSpan.FromMinutes(30), // Default to 10 minutes
+                NotificationEmails = "muhammet.bel@testinium.com", // Default to empty string
+                SmtpServer = "smtp-mail.outlook.com", // Default to a placeholder SMTP server
+                SmtpPort = 587, // Default to a common SMTP port
+                SmtpUsername = "muhammet.bel@testinium.com", // Default to empty string
+                SmtpPassword = "" // Default to empty string
+            };
+        
+            context.Settings.Add(settings);
+            await context.SaveChangesAsync();
+        }
     }
 
     private async Task SeedDataFromCurlCommands()

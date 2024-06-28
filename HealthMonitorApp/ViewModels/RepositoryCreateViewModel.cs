@@ -16,13 +16,10 @@ public class RepositoryCreateViewModel
     public bool IntegrateEndpoints { get; set; } = false;
 
     public List<Variable>? Variables { get; set; }
-    
+
     public string? ExcludedControllers { get; set; }
     public string? ExcludedMethods { get; set; }
-    
-    public List<Guid>? SelectedApiGroupIds { get; set; } = new List<Guid>();
-    public List<SelectListItem> ApiGroups { get; set; } = new List<SelectListItem>();
 
-
-
+    public List<Guid>? SelectedApiGroupIds { get; set; } = new();
+    public List<SelectListItem> ApiGroups { get; set; } = new();
 }

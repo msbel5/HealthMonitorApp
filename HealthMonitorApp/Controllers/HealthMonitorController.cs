@@ -73,7 +73,8 @@ public class HealthMonitorController : Controller
                 Name = service.Name,
                 IsHealthy = service.IsHealthy,
                 ApiGroupName = service.ApiEndpoint?.ApiGroup?.Name ?? "N/A", // Fallback to "Unknown" if null
-                RepositoryName = service.ApiEndpoint?.ApiGroup?.RepositoryAnalysis?.Name ?? "N/A", // Fallback to "Unknown" if null
+                RepositoryName =
+                    service.ApiEndpoint?.ApiGroup?.RepositoryAnalysis?.Name ?? "N/A", // Fallback to "Unknown" if null
                 CurrentResponseTime = service.ResponseTime,
                 LastThreeResponseTimes = lastThreeHistories,
                 AverageResponseTime = averageResponseTime,
@@ -285,15 +286,16 @@ public class HealthMonitorController : Controller
                 var serviceStatus = await _context.ServiceStatuses.Include(s => s.ApiEndpoint)
                     .ThenInclude(ae => ae.ApiGroup)
                     .FirstOrDefaultAsync(s => s.Id == id);
-                
+
                 if (serviceStatus == null) return NotFound();
-                
+
                 // Update the properties of serviceStatus and its ApiEndpoint based on viewModel
                 serviceStatus.Name = viewModel.Name;
                 serviceStatus.ApiEndpointId = viewModel.ApiEndpointId;
                 serviceStatus.ApiEndpoint.ExpectedStatusCode = viewModel.ExpectedStatusCode;
                 serviceStatus.ApiEndpoint.cURL = viewModel.CURL;
-                serviceStatus.ApiEndpoint.ApiGroupId = viewModel.ApiGroupId.GetValueOrDefault(); // Assign new group ID here
+                serviceStatus.ApiEndpoint.ApiGroupId =
+                    viewModel.ApiGroupId.GetValueOrDefault(); // Assign new group ID here
                 if (viewModel.AssertionScript != null)
                 {
                     var scriptCheckResult =
@@ -315,10 +317,10 @@ public class HealthMonitorController : Controller
 
             return RedirectToAction(nameof(Index));
         }
-        
-        
+
+
         viewModel.ApiGroups = _context.ApiGroups.ToList();
-        
+
         return View(viewModel);
     }
 

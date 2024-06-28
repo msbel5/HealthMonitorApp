@@ -52,7 +52,6 @@ public class RepositoryService
             .ThenInclude(ag => ag.ApiEndpoints)
             .ThenInclude(ae => ae.ServiceStatus)
             .FirstOrDefaultAsync(g => g.Id == id);
-
     }
 
     public async Task SaveRepositoryAnalysisAsync(RepositoryAnalysis repositoryAnalysis)
@@ -75,6 +74,7 @@ public class RepositoryService
         await _dbContext.SaveChangesAsync();
         _logger.LogInformation("Deleted repository analysis: {RepositoryName}", repositoryAnalysis.Name);
     }
+
     public async Task CreateExcelFromRepositoryAsync(RepositoryAnalysis? repositoryAnalysis)
     {
         var json = await ExtractControllersAndEndpointsAsJsonAsync(repositoryAnalysis);
@@ -93,21 +93,19 @@ public class RepositoryService
         worksheet.Cells[1, 5].Value = "Is Open";
         worksheet.Cells[1, 6].Value = "Annotations";
 
-        int currentRow = 2;
+        var currentRow = 2;
         foreach (var group in apiGroups)
+        foreach (var endpoint in group.ApiEndpoints)
         {
-            foreach (var endpoint in group.ApiEndpoints)
-            {
-                var needToken = (endpoint.IsAuthorized ?? false) || !(endpoint.IsOpen ?? true);
+            var needToken = (endpoint.IsAuthorized ?? false) || !(endpoint.IsOpen ?? true);
 
-                worksheet.Cells[currentRow, 1].Value = group.Name;
-                worksheet.Cells[currentRow, 2].Value = endpoint.Name;
-                worksheet.Cells[currentRow, 3].Value = needToken ? "Yes" : "No";
-                worksheet.Cells[currentRow, 4].Value = endpoint.IsAuthorized == true ? "Yes" : "No";
-                worksheet.Cells[currentRow, 5].Value = endpoint.IsOpen == true ? "Yes" : "No";
-                worksheet.Cells[currentRow, 6].Value = endpoint.Annotations;
-                currentRow++;
-            }
+            worksheet.Cells[currentRow, 1].Value = group.Name;
+            worksheet.Cells[currentRow, 2].Value = endpoint.Name;
+            worksheet.Cells[currentRow, 3].Value = needToken ? "Yes" : "No";
+            worksheet.Cells[currentRow, 4].Value = endpoint.IsAuthorized == true ? "Yes" : "No";
+            worksheet.Cells[currentRow, 5].Value = endpoint.IsOpen == true ? "Yes" : "No";
+            worksheet.Cells[currentRow, 6].Value = endpoint.Annotations;
+            currentRow++;
         }
 
         // Convert range to table for sortable columns
@@ -122,14 +120,16 @@ public class RepositoryService
         worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
 
         // Apply conditional formatting for the entire row based on "Needs Token" column
-        for (int row = 2; row < currentRow; row++)
+        for (var row = 2; row < currentRow; row++)
         {
             var rowRange = worksheet.Cells[row, 1, row, 6];
             var condition = worksheet.ConditionalFormatting.AddExpression(rowRange);
             condition.Formula = $"$C{row}=\"Yes\"";
             condition.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes", StringComparison.OrdinalIgnoreCase) ;
-            condition.Style.Fill.BackgroundColor.Color = needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
+            var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes",
+                StringComparison.OrdinalIgnoreCase);
+            condition.Style.Fill.BackgroundColor.Color =
+                needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
         }
 
         // Save the Excel file
@@ -139,11 +139,10 @@ public class RepositoryService
             var fileInfo = new FileInfo(filePath);
             await package.SaveAsAsync(fileInfo);
         }
-        
+
         _logger.LogInformation("Created Excel file for repository: {RepositoryName}", repositoryAnalysis?.Name);
-        
     }
-    
+
 
     public async Task<string> ExtractControllersAndEndpointsAsJsonAsync(RepositoryAnalysis? repositoryAnalysis)
     {
@@ -173,7 +172,7 @@ public class RepositoryService
                     IsAuthorized = isControllerAuthorized,
                     Annotations = controllerAnnotationsListed
                 };
-                
+
                 _logger.LogInformation("Found API group: {GroupName}", apiGroup.Name);
 
                 foreach (var method in controller.Members.OfType<MethodDeclarationSyntax>())
@@ -191,47 +190,48 @@ public class RepositoryService
                         IsAuthorized = isMethodAuthorized,
                         IsOpen = !isMethodAuthorized || isMethodOpen,
                         Annotations = methodAnnotationsListed,
-                        Parameters = JsonConvert.SerializeObject(ExtractMethodParameters(method, semanticModel), Formatting.None)
+                        Parameters = JsonConvert.SerializeObject(ExtractMethodParameters(method, semanticModel),
+                            Formatting.None)
                     };
 
                     apiGroup.ApiEndpoints.Add(apiEndPoint);
-                    
-                    _logger.LogInformation("Found API endpoint: {EndpointName} on {ApiGroup}", apiEndPoint.Name, apiGroup.Name);
+
+                    _logger.LogInformation("Found API endpoint: {EndpointName} on {ApiGroup}", apiEndPoint.Name,
+                        apiGroup.Name);
                 }
 
                 apiGroups.Add(apiGroup);
             }
         }
+
         var excludedControllers = repositoryAnalysis.ExcludedControllers;
-        List<string> excludedControllersList = new List<string>();
+        List<string> excludedControllersList = new();
         if (excludedControllers != null)
-        {
-            excludedControllersList = excludedControllers.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            excludedControllersList = excludedControllers
+                .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .ToList();
-        }
-        apiGroups =  apiGroups.Where(c => !excludedControllersList.Any(ec => c.Name.Contains(ec, StringComparison.OrdinalIgnoreCase))).ToList();
-            
+        apiGroups = apiGroups.Where(c =>
+            !excludedControllersList.Any(ec => c.Name.Contains(ec, StringComparison.OrdinalIgnoreCase))).ToList();
+
         var excludedEndpoints = repositoryAnalysis.ExcludedEndpoints;
-        List<string> excludedEndpointsList = new List<string>();
+        List<string> excludedEndpointsList = new();
         if (excludedEndpoints != null)
-        {
             excludedEndpointsList = excludedEndpoints.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .ToList();
-        }
         foreach (var apiGroup in apiGroups)
-        {
-            apiGroup.ApiEndpoints = apiGroup.ApiEndpoints.Where(e => !excludedEndpointsList.Any(ee => e.Name.Contains(ee, StringComparison.OrdinalIgnoreCase))).ToList();
-        }
-        
+            apiGroup.ApiEndpoints = apiGroup.ApiEndpoints.Where(e =>
+                !excludedEndpointsList.Any(ee => e.Name.Contains(ee, StringComparison.OrdinalIgnoreCase))).ToList();
+
 
         var json = JsonConvert.SerializeObject(apiGroups, Formatting.None);
-        _logger.LogInformation("Extracted {ApiGroupCount} API groups and {ApiEndpointCount} endpoints", apiGroups.Count , apiGroups.Sum(g => g.ApiEndpoints.Count));
+        _logger.LogInformation("Extracted {ApiGroupCount} API groups and {ApiEndpointCount} endpoints", apiGroups.Count,
+            apiGroups.Sum(g => g.ApiEndpoints.Count));
         _logger.LogDebug("Extracted API groups and endpoints: {Json}", json);
         return json;
     }
-    
+
 
     private JArray ExtractMethodParameters(MethodDeclarationSyntax method, SemanticModel model)
     {
@@ -248,7 +248,8 @@ public class RepositoryService
             };
 
             // Check if the parameter is a complex type
-            if (typeInfo.Type is INamedTypeSymbol namedTypeSymbol && !namedTypeSymbol.IsValueType && namedTypeSymbol.Name != "String")
+            if (typeInfo.Type is INamedTypeSymbol namedTypeSymbol && !namedTypeSymbol.IsValueType &&
+                namedTypeSymbol.Name != "String")
             {
                 paramObj["IsComplex"] = true;
                 paramObj["Properties"] = ExtractTopLevelProperties(namedTypeSymbol, model);
@@ -264,27 +265,24 @@ public class RepositoryService
     {
         var properties = new JArray();
         foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
-        {
-            if (property.DeclaredAccessibility == Accessibility.Public && !property.Type.ToString().Contains("?") && !IsCollectionType(property.Type))
-            {
+            if (property.DeclaredAccessibility == Accessibility.Public && !property.Type.ToString().Contains("?") &&
+                !IsCollectionType(property.Type))
                 properties.Add(new JObject
                 {
                     ["Name"] = property.Name,
                     ["Type"] = property.Type.ToString(),
                     ["DefaultValue"] = GetDefaultValueForType(property.Type, model)
                 });
-            }
-        }
         return properties;
     }
 
-    
 
     private string DetermineParameterSource(ParameterSyntax parameter)
     {
         var sourceAttribute = parameter.AttributeLists
             .SelectMany(a => a.Attributes)
-            .FirstOrDefault(a => new[] { "FromBody", "FromQuery", "FromRoute", "FromForm" }.Any(tag => a.Name.ToString().Contains(tag)));
+            .FirstOrDefault(a =>
+                new[] { "FromBody", "FromQuery", "FromRoute", "FromForm" }.Any(tag => a.Name.ToString().Contains(tag)));
 
         return sourceAttribute?.Name.ToString().Replace("From", "").ToLower() ?? "query";
     }
@@ -303,7 +301,8 @@ public class RepositoryService
             };
 
             // Recursively extract properties if the property itself is a complex type
-            if (property.Type is INamedTypeSymbol nestedTypeSymbol && !nestedTypeSymbol.IsValueType && nestedTypeSymbol.Name != "String")
+            if (property.Type is INamedTypeSymbol nestedTypeSymbol && !nestedTypeSymbol.IsValueType &&
+                nestedTypeSymbol.Name != "String")
             {
                 propertyObj["IsComplex"] = true;
                 propertyObj["Properties"] = ExtractPropertiesFromComplexType(nestedTypeSymbol, model);
@@ -311,10 +310,9 @@ public class RepositoryService
 
             properties.Add(propertyObj);
         }
+
         return properties;
     }
-
-
 
 
     private string GetDefaultValueForType(ITypeSymbol type, SemanticModel model)
@@ -336,13 +334,13 @@ public class RepositoryService
                 if (type.TypeKind == TypeKind.Enum)
                 {
                     var enumType = type as INamedTypeSymbol;
-                    var firstEnumMember = enumType.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(e => e.IsStatic && e.HasConstantValue);
+                    var firstEnumMember = enumType.GetMembers().OfType<IFieldSymbol>()
+                        .FirstOrDefault(e => e.IsStatic && e.HasConstantValue);
                     return firstEnumMember != null ? "" + firstEnumMember.ConstantValue.ToString() + "" : "";
                 }
+
                 if (IsComplexType(type) && IsEssentialComplexProperty(type, model))
-                {
                     return CreateSimplifiedObjectForViewModel(type as INamedTypeSymbol, model);
-                }
                 return "placeholder";
         }
     }
@@ -360,15 +358,11 @@ public class RepositoryService
         if (namedType == null) return false;
 
         foreach (var property in namedType.GetMembers().OfType<IPropertySymbol>())
-        {
             // Check if the property is public, non-nullable, and not a collection
-            if (property.DeclaredAccessibility == Accessibility.Public && 
-                !property.Type.ToString().Contains("?") && 
+            if (property.DeclaredAccessibility == Accessibility.Public &&
+                !property.Type.ToString().Contains("?") &&
                 !IsCollectionType(property.Type))
-            {
                 return true;
-            }
-        }
         return false;
     }
 
@@ -378,24 +372,20 @@ public class RepositoryService
         return type.AllInterfaces.Any(i => i.Name == "IEnumerable") && type.Name != "String";
     }
 
-    
+
     // Generate a simplified JSON object for essential complex types
     private string CreateSimplifiedObjectForViewModel(INamedTypeSymbol typeSymbol, SemanticModel model)
     {
-        JObject simplifiedObject = new JObject();
+        var simplifiedObject = new JObject();
         foreach (var property in typeSymbol.GetMembers().OfType<IPropertySymbol>())
-        {
             if (property.DeclaredAccessibility == Accessibility.Public &&
                 !property.Type.ToString().Contains("?") &&
                 !IsCollectionType(property.Type))
-            {
                 simplifiedObject[property.Name] = GetDefaultValueForType(property.Type, model);
-            }
-        }
         return JsonConvert.SerializeObject(simplifiedObject, Formatting.None);
     }
-    
-    
+
+
     public async Task<Compilation> CreateCompilationAsync(string[] filePaths)
     {
         var syntaxTrees = new List<SyntaxTree>();
@@ -414,7 +404,6 @@ public class RepositoryService
         };
         _logger.LogInformation("Created compilation for {FileCount} files", filePaths.Length);
         return CSharpCompilation.Create("Analysis", syntaxTrees, references);
-
     }
 
     private bool IsLikelyApiEndpoint(MethodDeclarationSyntax method)
@@ -441,9 +430,8 @@ public class RepositoryService
                 attrList.Attributes.Any(attr =>
                     new[] { "FromBody", "FromQuery", "FromRoute", "FromHeader", "FromForm" }
                         .Any(paramAttr => attr.Name.ToString().Contains(paramAttr)))));
-        
+
         return hasHttpOrRouteAttribute || hasApiReturnType || hasApiParameterAttributes;
-        
     }
 
 
@@ -458,7 +446,8 @@ public class RepositoryService
         // If no prefix was found in the code, attempt to extract it from appsettings.json.
         var apiPrefixFromAppSettings = GetApiPrefixFromAppSettings(repositoryAnalysis);
 
-        _logger.LogInformation("API prefix from code: {ApiPrefixFromCode}, API prefix from appsettings.json: {ApiPrefixFromAppSettings}",
+        _logger.LogInformation(
+            "API prefix from code: {ApiPrefixFromCode}, API prefix from appsettings.json: {ApiPrefixFromAppSettings}",
             apiPrefixFromCode, apiPrefixFromAppSettings);
         // Return the prefix found in appsettings.json, or an empty string if none was found.
         return apiPrefixFromAppSettings ?? string.Empty;
@@ -566,7 +555,7 @@ public class RepositoryService
             basePath = Path.Combine(_env.ContentRootPath, "Data");
             _logger.LogInformation("Running in a local environment, using path: {BasePath}", basePath);
         }
-        
+
         var tempPath = Path.GetTempPath();
         var repositoryDownloadPath = Path.Combine(tempPath, "Repos", modelName, branchName);
         _logger.LogInformation("Using repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
@@ -581,7 +570,6 @@ public class RepositoryService
 
     private bool IsRunningInCloudEnvironment()
     {
-        
         // Implement checks for cloud environments. This can be based on specific environment variables
         // that cloud providers set, for example, WEBSITE_INSTANCE_ID for Azure App Services.
         return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID")) ||

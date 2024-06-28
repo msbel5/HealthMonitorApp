@@ -10,7 +10,8 @@
     <ul>
         @foreach (var apiGroup in Model.ApiGroups)
         {
-            <li>@apiGroup.Name
+            <li>
+                @apiGroup.Name
                 <ul>
                     @foreach (var endPoint in apiGroup.ApiEndpoints)
                     {

@@ -59,7 +59,7 @@ public class HealthCheckService
                     ApiGroupId = endpoint.ApiGroupId,
                     Annotations = endpoint.Annotations,
                     ApiGroup = endpoint.ApiGroup,
-                    ServiceStatus = endpoint.ServiceStatus,
+                    ServiceStatus = endpoint.ServiceStatus
                 };
                 HttpResponseMessage response;
 
@@ -155,12 +155,11 @@ public class HealthCheckService
                 "Sos Health Check Failure",
                 emailBody
             );
+            */
             await _warningService.SendEmailViaExchangeAsync(
-                "muhammet.bel@testinium.com",
                 "Sos Health Check Failure",
                 emailBody
             );
-            */
         }
     }
 
@@ -172,7 +171,6 @@ public class HealthCheckService
 
     private async Task<HttpResponseMessage> HandleLiteralUrlAsync(ApiEndpoint apiEndpoint)
     {
-        
         var dynamicStringProcessor = new DynamicStringProcessor(_context);
         apiEndpoint.cURL = apiEndpoint.cURL.Replace("\\", string.Empty).Trim();
         var serviceStatus = _context.ServiceStatuses.FirstOrDefault(ss => ss.ApiEndpointId == apiEndpoint.Id);
@@ -222,7 +220,7 @@ public class HealthCheckService
             throw new InvalidOperationException("The script contains potentially harmful code.");
 
         var cUrl = dynamicStringProcessor.Process(apiEndpoint);
-        
+
         var segments = ParseCurlCommand(cUrl);
 
         var url = ExtractUrl(segments);
@@ -231,10 +229,7 @@ public class HealthCheckService
 
         var request = new HttpRequestMessage(method, url);
 
-        foreach (var header in headers)
-        {
-            request.Headers.TryAddWithoutValidation(header.Key, header.Value);
-        }
+        foreach (var header in headers) request.Headers.TryAddWithoutValidation(header.Key, header.Value);
 
         SetRequestBody(request, segments);
 
@@ -254,42 +249,34 @@ public class HealthCheckService
     {
         var url = segments.FirstOrDefault(s => Uri.IsWellFormedUriString(s, UriKind.Absolute));
         if (string.IsNullOrEmpty(url))
-        {
             throw new InvalidOperationException("The cURL command does not contain a valid URL.");
-        }
         return url;
     }
-    
+
     private static HttpMethod DetermineHttpMethod(string[] segments)
     {
         var methodIndex = Array.IndexOf(segments, "-X");
         if (methodIndex != -1 && segments.Length > methodIndex + 1)
-        {
             return new HttpMethod(segments[methodIndex + 1].ToUpper());
-        }
         return HttpMethod.Get; // Default method if not specified
     }
 
- 
+
     private static Dictionary<string, string> ExtractHeaders(string[] segments)
     {
         var headers = new Dictionary<string, string>();
-        for (int i = 0; i < segments.Length; i++)
-        {
+        for (var i = 0; i < segments.Length; i++)
             if (segments[i] == "-H")
             {
                 var headerParts = segments[i + 1].Split(new[] { ':' }, 2);
-                if (headerParts.Length == 2)
-                {
-                    headers.Add(headerParts[0], headerParts[1].Trim());
-                }
+                if (headerParts.Length == 2) headers.Add(headerParts[0], headerParts[1].Trim());
                 i++; // Skip the next segment since it's part of the current header
             }
-        }
+
         return headers;
     }
 
-    
+
     private static void SetRequestBody(HttpRequestMessage request, string[] segments)
     {
         var method = request.Method;
@@ -302,9 +289,5 @@ public class HealthCheckService
                 request.Content = new StringContent(bodyContent, Encoding.UTF8, "application/json"); // Assuming JSON
             }
         }
-        
-
-        
     }
-    
 }

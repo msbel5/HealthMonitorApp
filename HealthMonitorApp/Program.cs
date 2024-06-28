@@ -12,18 +12,20 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builtLog += "ServiceType: ApplicationDbContext, Lifetime: Scoped, ImplementationType: None\n";
+builder.Services.AddTransient<DataSeeder>(); // Register DataSeeder as a service
+builtLog += "ServiceType: DataSeeder, Lifetime: Transient, ImplementationType: None\n";
+builder.Services.AddScoped<CurlGeneratorService>();
+builtLog += "ServiceType: CurlGeneratorService, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddScoped<HealthCheckService>();
 builtLog += "ServiceType: HealthCheckService, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddScoped<AssertionService>();
 builtLog += "ServiceType: AssertionService, Lifetime: Scoped, ImplementationType: None\n";
-builder.Services.AddTransient<WarningService>();
-builtLog += "ServiceType: WarningService, Lifetime: Transient, ImplementationType: None\n";
+builder.Services.AddScoped<WarningService>();
+builtLog += "ServiceType: WarningService, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddTransient<RepositoryService>();
 builtLog += "ServiceType: RepositoryService, Lifetime: Transient, ImplementationType: None\n";
 builder.Services.AddScoped<ReportHandler>();
 builtLog += "ServiceType: ReportHandler, Lifetime: Scoped, ImplementationType: None\n";
-builder.Services.AddTransient<DataSeeder>(); // Register DataSeeder as a service
-builtLog += "ServiceType: DataSeeder, Lifetime: Transient, ImplementationType: None\n";
 builder.Services.AddHostedService<HealthCheckHostedService>();
 builtLog += "ServiceType: HealthCheckHostedService, Lifetime: Singleton, ImplementationType: None\n";
 builder.Services.AddSignalR();
@@ -83,7 +85,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Application Inspector Service Called");
         appInspectorService.EnsureAppInspectorInstalledAsync().GetAwaiter().GetResult();
         logger.LogInformation("Ensured ApplicationInspector is installed");
-        
     }
     catch (Exception ex)
     {
@@ -106,4 +107,4 @@ lifetime.ApplicationStarted.Register(() =>
     }
 });
 
-app.Run("http://0.0.0.0:8080");
+app.Run();

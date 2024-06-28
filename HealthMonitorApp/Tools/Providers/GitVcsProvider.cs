@@ -40,8 +40,8 @@ public class GitVcsProvider : IVcsProvider
 
         var remoteLatestCommitHash = output.Split('\t')[0]; // Extract the commit hash
         var storedLatestCommitHash = repositoryAnalysis.LatestCommitHash;
-        
-        
+
+
         return remoteLatestCommitHash == storedLatestCommitHash;
     }
 
@@ -90,13 +90,12 @@ public class GitVcsProvider : IVcsProvider
     {
         if (repositoryAnalysis == null)
             throw new ArgumentNullException(nameof(repositoryAnalysis));
-    
+
         // The repository is not up to date, delete and re-clone it
         await DeleteRepositoryAsync(repositoryAnalysis);
         await DownloadRepositoryAsync(repositoryAnalysis);
-        
     }
-    
+
 
     public async Task CheckCommitHashAsync(RepositoryAnalysis repositoryAnalysis)
     {

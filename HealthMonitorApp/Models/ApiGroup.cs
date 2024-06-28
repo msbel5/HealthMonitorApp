@@ -5,7 +5,12 @@ public class ApiGroup
     public Guid Id { get; set; }
     public string Name { get; set; }
 
-    public Guid? RepositoryAnalysisId { get; set; } // Foreign key property (nullable if an ApiGroup might not belong to a RepositoryAnalysis)
+    public Guid?
+        RepositoryAnalysisId
+    {
+        get;
+        set;
+    } // Foreign key property (nullable if an ApiGroup might not belong to a RepositoryAnalysis)
 
     public RepositoryAnalysis? RepositoryAnalysis { get; set; } // Navigation property
 

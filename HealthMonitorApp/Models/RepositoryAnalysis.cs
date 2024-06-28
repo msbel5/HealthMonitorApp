@@ -24,11 +24,11 @@ public class RepositoryAnalysis
     public int NumberOfPublicEndpoints { get; set; } = 0; // Default value
 
     public string LatestCommitHash { get; set; } = string.Empty; // Default value
-    
+
     public string? ExcludedControllers { get; set; }
-    
+
     public string? ExcludedEndpoints { get; set; }
-    
+
     public ICollection<ApiGroup> ApiGroups { get; set; } = new List<ApiGroup>();
 
     public ICollection<Variable>? Variables { get; set; } =
@@ -68,7 +68,7 @@ public class RepositoryAnalysis
     {
         return Path + "/" + Report;
     }
-    
+
     public string GetExcelPath()
     {
         return Path + "/" + Excel;

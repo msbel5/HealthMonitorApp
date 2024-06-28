@@ -1,0 +1,68 @@
+@model CurlGenerator.Core.GeneratorResult
+
+@{
+    ViewData["Title"] = "Curl Generation Result";
+}
+
+<h2>Curl Generation Result</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <h3>Files</h3>
+        <ul id="fileList" class="list-group">
+            @foreach (var file in Model.Files)
+            {
+                <li class="list-group-item" onclick="showFileContent('@file.Filename')">
+                    @file.Filename
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="col-md-8">
+        <h3>Content</h3>
+        <div id="fileContent">
+            <pre id="fileContentText"></pre>
+            <textarea id="fileContentEdit" class="form-control" style="display:none;"></textarea>
+            <button id="editButton" class="btn btn-primary" onclick="toggleEditMode()">Edit</button>
+            <button id="saveButton" class="btn btn-success" style="display:none;" onclick="saveContent()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentFileContent = "";
+    let currentFileEndpoint = "";
+
+    function showFileContent(endpoint) {
+        const files = @Html.Raw(Json.Serialize(Model.Files.ToDictionary(f => f.Filename, f => f.Content)));
+        currentFileContent = files[endpoint];
+        currentFileEndpoint = endpoint;
+
+        document.getElementById('fileContentText').innerText = currentFileContent;
+        document.getElementById('fileContentEdit').value = currentFileContent;
+        document.getElementById('fileContentText').style.display = 'block';
+        document.getElementById('fileContentEdit').style.display = 'none';
+        document.getElementById('editButton').style.display = 'block';
+        document.getElementById('saveButton').style.display = 'none';
+    }
+
+    function toggleEditMode() {
+        document.getElementById('fileContentText').style.display = 'none';
+        document.getElementById('fileContentEdit').style.display = 'block';
+        document.getElementById('editButton').style.display = 'none';
+        document.getElementById('saveButton').style.display = 'block';
+    }
+
+    async function saveContent() {
+        const editedContent = document.getElementById('fileContentEdit').value;
+        currentFileContent = editedContent;
+
+        // Add code here to save the updated content to the server if necessary
+
+        document.getElementById('fileContentText').innerText = currentFileContent;
+        document.getElementById('fileContentText').style.display = 'block';
+        document.getElementById('fileContentEdit').style.display = 'none';
+        document.getElementById('editButton').style.display = 'block';
+        document.getElementById('saveButton').style.display = 'none';
+    }
+</script>

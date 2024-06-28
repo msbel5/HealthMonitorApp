@@ -140,6 +140,4 @@ public class AssertionService
     {
         public HttpResponseMessage response { get; set; }
     }
-    
-    
 }
