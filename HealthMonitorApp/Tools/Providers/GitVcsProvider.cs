@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using HealthMonitorApp.Interfaces;
 using HealthMonitorApp.Models;
 

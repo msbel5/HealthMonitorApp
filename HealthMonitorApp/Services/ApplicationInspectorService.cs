@@ -1,12 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using HealthMonitorApp.Models;
+using HealthMonitorApp.Tools;
 using HealthMonitorApp.Tools.Providers;
 using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Services;
-
-using Tools;
 
 public class ApplicationInspectorService(RepositoryService repositoryService, ReportHandler reportHandler)
 {

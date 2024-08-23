@@ -240,7 +240,6 @@ public class HealthCheckService
     private static string[] ParseCurlCommand(string cURL)
     {
         return Regex.Matches(cURL, @"[^\s""']+|""([^""]*)""|'([^']*)'")
-            .Cast<Match>()
             .Select(m => m.Value.Trim('"').Trim('\''))
             .ToArray();
     }

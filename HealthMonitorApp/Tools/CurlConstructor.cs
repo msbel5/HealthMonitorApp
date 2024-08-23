@@ -3,9 +3,7 @@ using System.Text.RegularExpressions;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
-using System.Web;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HealthMonitorApp.Tools;
@@ -104,7 +102,7 @@ public class CurlConstructor(RepositoryService repositoryService, ApplicationDbC
                         {
                             new
                             {
-                                Name = prop.Name, DefaultValue = prop.Value.ToString(),
+                                prop.Name, DefaultValue = prop.Value.ToString(),
                                 IsComplex = IsJsonString(prop.Value.ToString())
                             }
                         }), formData);

@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Text;
 using HealthMonitorApp.Data;
-using HealthMonitorApp.Models;
 using Newtonsoft.Json;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -12,8 +11,8 @@ namespace HealthMonitorApp.Services;
 
 public class WarningService
 {
-    private readonly ILogger<WarningService> _logger;
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<WarningService> _logger;
 
     public WarningService(ILogger<WarningService> logger, ApplicationDbContext context)
     {
@@ -78,16 +77,14 @@ public class WarningService
 
     public async Task SendEmailViaExchangeAsync(string subject, string body)
     {
-        
         var toEmail = "muhammet.bel@testinium.com";
         var username = "muhammet.bel@testinium.com";
         var smtpServer = "smtp-mail.outlook.com";
         var smtpPort = 587;
         var password = "";
 
-        
-        
-        Settings? setting = _context.Settings.FirstOrDefault();
+
+        var setting = _context.Settings.FirstOrDefault();
 
         if (setting != null)
         {
@@ -97,8 +94,8 @@ public class WarningService
             smtpServer = setting.SmtpServer;
             smtpPort = setting.SmtpPort;
         }
-        
-        
+
+
         var fromAddress = new MailAddress(username, "Health Monitor App");
         var toAddress = new MailAddress(toEmail);
 

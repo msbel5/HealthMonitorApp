@@ -1,8 +1,7 @@
 using HealthMonitorApp.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HealthMonitorApp.ViewModels;
-
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 public class RepositoryCreateViewModel
 {

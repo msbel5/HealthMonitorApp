@@ -1,3 +1,4 @@
+using System.Drawing;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using Microsoft.CodeAnalysis;
@@ -7,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using OfficeOpenXml.Table;
 
 namespace HealthMonitorApp.Services;
 
@@ -114,7 +117,7 @@ public class RepositoryService
         var table = worksheet.Tables.Add(tableRange, tableName);
         table.ShowHeader = true;
         table.ShowFilter = true;
-        table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium2;
+        table.TableStyle = TableStyles.Medium2;
 
         // Auto-fit columns
         worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
@@ -125,11 +128,11 @@ public class RepositoryService
             var rowRange = worksheet.Cells[row, 1, row, 6];
             var condition = worksheet.ConditionalFormatting.AddExpression(rowRange);
             condition.Formula = $"$C{row}=\"Yes\"";
-            condition.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            condition.Style.Fill.PatternType = ExcelFillStyle.Solid;
             var needToken = string.Equals(worksheet.Cells[row, 3].Value.ToString(), "Yes",
                 StringComparison.OrdinalIgnoreCase);
             condition.Style.Fill.BackgroundColor.Color =
-                needToken ? System.Drawing.Color.LightGreen : System.Drawing.Color.LightCoral;
+                needToken ? Color.LightGreen : Color.LightCoral;
         }
 
         // Save the Excel file
@@ -336,7 +339,7 @@ public class RepositoryService
                     var enumType = type as INamedTypeSymbol;
                     var firstEnumMember = enumType.GetMembers().OfType<IFieldSymbol>()
                         .FirstOrDefault(e => e.IsStatic && e.HasConstantValue);
-                    return firstEnumMember != null ? "" + firstEnumMember.ConstantValue.ToString() + "" : "";
+                    return firstEnumMember != null ? "" + firstEnumMember.ConstantValue + "" : "";
                 }
 
                 if (IsComplexType(type) && IsEssentialComplexProperty(type, model))

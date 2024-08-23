@@ -1,38 +1,34 @@
 using CurlGenerator.Core;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using HealthMonitorApp.Data;
-using HealthMonitorApp.Models;
 
-namespace HealthMonitorApp.Services
+namespace HealthMonitorApp.Services;
+
+public class CurlGeneratorService
 {
-    public class CurlGeneratorService
+    private readonly ApplicationDbContext _context;
+
+    public CurlGeneratorService(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public CurlGeneratorService(ApplicationDbContext context)
+    public async Task<GeneratorResult> GenerateCurlScripts(string openApiJsonContent, string authorizationHeader,
+        string baseUrl)
+    {
+        var openApiJsonFilePath = Path.Combine(Path.GetTempPath(), "openApiJsonFile.json");
+        await File.WriteAllTextAsync(openApiJsonFilePath, openApiJsonContent);
+
+        var settings = new GeneratorSettings
         {
-            _context = context;
-        }
+            OpenApiPath = openApiJsonFilePath,
+            AuthorizationHeader = authorizationHeader,
+            BaseUrl = baseUrl,
+            GenerateBashScripts = true
+        };
 
-        public async Task<GeneratorResult> GenerateCurlScripts(string openApiJsonContent, string authorizationHeader, string baseUrl)
-        {
-            var openApiJsonFilePath = Path.Combine(Path.GetTempPath(), "openApiJsonFile.json");
-            await File.WriteAllTextAsync(openApiJsonFilePath, openApiJsonContent);
-            
-            var settings = new GeneratorSettings
-            {
-                OpenApiPath = openApiJsonFilePath,
-                AuthorizationHeader = authorizationHeader,
-                BaseUrl = baseUrl,
-                GenerateBashScripts = true
-            };
-
-            var scriptPath = Path.Combine(Path.GetTempPath(), "bashScripts");
-            Directory.CreateDirectory(scriptPath);
-            var result = await ScriptFileGenerator.Generate(settings);
-            return result;
-        }
+        var scriptPath = Path.Combine(Path.GetTempPath(), "bashScripts");
+        Directory.CreateDirectory(scriptPath);
+        var result = await ScriptFileGenerator.Generate(settings);
+        return result;
     }
 }

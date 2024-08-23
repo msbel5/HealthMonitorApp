@@ -1,24 +1,20 @@
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
-using HealthMonitorApp.Tools;
 using HealthMonitorApp.ViewModels;
-using iTextSharp.text;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HealthMonitorApp.Controllers;
-
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 public class AnalysisController : Controller
 {
     private readonly DataSeeder _dataSeeder;
     private readonly ApplicationDbContext _dbContext;
     private readonly ApplicationInspectorService _inspectorService;
+    private readonly ILogger<AnalysisController> _logger;
     private readonly RepositoryService _repositoryService;
     private readonly VcsService _vcsService;
-    private readonly ILogger<AnalysisController> _logger;
 
 
     public AnalysisController(ApplicationInspectorService inspectorService, VcsService vcsService,
@@ -239,11 +235,11 @@ public class AnalysisController : Controller
         if (repositoryAnalysis == null) return NotFound();
 
         await _vcsService.DeleteRepositoryAsync(repositoryAnalysis);
-        List<ApiGroup> apiGroups = repositoryAnalysis.ApiGroups.ToList();
-        List<ApiEndpoint> apiEndpoints = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints).ToList();
-        List<ServiceStatus> serviceStatuses = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints)
+        var apiGroups = repositoryAnalysis.ApiGroups.ToList();
+        var apiEndpoints = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints).ToList();
+        var serviceStatuses = repositoryAnalysis.ApiGroups.SelectMany(ag => ag.ApiEndpoints)
             .Select(ae => ae.ServiceStatus).ToList();
-        List<Variable> variables = _dbContext.Variables.Where(v => v.RepositoryAnalysisId == id).ToList();
+        var variables = _dbContext.Variables.Where(v => v.RepositoryAnalysisId == id).ToList();
         _dbContext.RemoveRange(serviceStatuses);
         _dbContext.RemoveRange(apiEndpoints);
         _dbContext.RemoveRange(apiGroups);

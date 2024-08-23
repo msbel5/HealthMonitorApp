@@ -4,6 +4,7 @@ namespace HealthMonitorApp.Models;
 
 public class Variable
 {
+    private string _value;
     public Guid Id { get; set; }
 
     public string Name { get; set; }
@@ -16,9 +17,6 @@ public class Variable
 
     public Guid? RepositoryAnalysisId { get; set; }
     public RepositoryAnalysis? RepositoryAnalysis { get; set; }
-
-
-    private string _value;
 
     public static string EncryptVariable(string value)
     {

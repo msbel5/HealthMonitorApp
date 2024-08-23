@@ -2,8 +2,6 @@ using System.Text;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HtmlAgilityPack;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Tools;

@@ -1,12 +1,12 @@
 @{
-ViewData["Title"] = "Upload OpenAPI JSON";
+    ViewData["Title"] = "Upload OpenAPI JSON";
 }
 
 <h2>Upload OpenAPI JSON</h2>
 
 @if (ViewBag.Error != null)
 {
-<div class="alert alert-danger">@ViewBag.Error</div>
+    <div class="alert alert-danger">@ViewBag.Error</div>
 }
 
 <form id="openApiForm" enctype="multipart/form-data" method="post" asp-action="UploadOpenApiJson">

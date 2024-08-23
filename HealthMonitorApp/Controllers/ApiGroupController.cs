@@ -83,7 +83,7 @@ public class ApiGroupController : Controller
             .Where(v => v.ApiGroupId == id)
             .ToListAsync();
         var variableIds = apiGroupVariables.Select(v => v.Id).ToList();
-        List<Variable> variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
+        var variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
         var apiGroupViewModel = new ApiGroupViewModel
         {
             ApiGroup = apiGroup,
@@ -124,7 +124,7 @@ public class ApiGroupController : Controller
                     else
                     {
                         // Add new variable
-                        var newVariable = new Variable()
+                        var newVariable = new Variable
                         {
                             ApiGroupId = apiGroupViewModel.ApiGroup.Id,
                             Name = variable.Name,
@@ -141,8 +141,7 @@ public class ApiGroupController : Controller
             {
                 if (!ApiGroupExists(apiGroupViewModel.ApiGroup.Id))
                     return NotFound();
-                else
-                    throw;
+                throw;
             }
             catch (Exception ex)
             {
@@ -162,7 +161,7 @@ public class ApiGroupController : Controller
             .Where(v => v.ApiGroupId == id)
             .ToListAsync();
         var variableIds = apiGroupVariables.Select(v => v.Id).ToList();
-        List<Variable> variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
+        var variables = _context.Variables.Where(v => variableIds.Contains(v.Id)).ToList();
         var apiGroupViewModel = new ApiGroupViewModel
         {
             ApiGroup = apiGroup,
@@ -200,7 +199,7 @@ public class ApiGroupController : Controller
             _context.ServiceStatuses.Remove(apiEndpoint.ServiceStatus);
         }
 
-        List<Variable> variables = _context.Variables.Where(v => v.ApiGroupId == id).ToList();
+        var variables = _context.Variables.Where(v => v.ApiGroupId == id).ToList();
         _context.Variables.RemoveRange(variables);
         _context.ApiGroups.Remove(apiGroup);
         await _context.SaveChangesAsync();

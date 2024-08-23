@@ -1,9 +1,5 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using System.Threading.Tasks;
 using HealthMonitorApp.Services;
-using CurlGenerator.Core;
+using Microsoft.AspNetCore.Mvc;
 
 public class ScriptController : Controller
 {
@@ -21,7 +17,8 @@ public class ScriptController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> UploadOpenApiJson(IFormFile file, [FromForm] string authorizationHeader, [FromForm] string baseUrl)
+    public async Task<IActionResult> UploadOpenApiJson(IFormFile file, [FromForm] string authorizationHeader,
+        [FromForm] string baseUrl)
     {
         if (file == null || file.Length == 0)
         {

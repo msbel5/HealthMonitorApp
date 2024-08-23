@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using HealthMonitorApp.Models;
 using HealthMonitorApp.Services;
 using HealthMonitorApp.Tools;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace HealthMonitorApp.Data;
@@ -17,7 +16,7 @@ public class DataSeeder(
     public Task SeedData()
     {
         if (!context.ServiceStatuses.Any()) SeedOnDeploy();
-        return  Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
 
@@ -91,9 +90,9 @@ public class DataSeeder(
     private async void SeedOnDeploy()
     {
         if (context.ServiceStatuses.Any()) return;
-        
+
         await SeedSettingsOnDeploy();
-        
+
         await SeedDataFromCurlCommands();
         // 1. Create and add ApiGroups
         var googleGroup = new ApiGroup { Name = "Search Engines" };
@@ -121,14 +120,12 @@ public class DataSeeder(
 
         context.ServiceStatuses.AddRange(googleStatus);
         await context.SaveChangesAsync();
-        
     }
-    
+
     private async Task SeedSettingsOnDeploy()
     {
         if (!context.Settings.Any())
         {
-                                    
             var settings = new Settings
             {
                 TestInterval = TimeSpan.FromMinutes(30), // Default to 10 minutes
@@ -138,7 +135,7 @@ public class DataSeeder(
                 SmtpUsername = "muhammet.bel@testinium.com", // Default to empty string
                 SmtpPassword = "" // Default to empty string
             };
-        
+
             context.Settings.Add(settings);
             await context.SaveChangesAsync();
         }
@@ -189,8 +186,8 @@ public class DataSeeder(
                 {
                     logger.LogWarning("Failed to extract URL from cURL command");
                     continue;
-                }
 
+                }
                 var urlPath = match.Groups[1].Value;
                 var pathSegments = urlPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
