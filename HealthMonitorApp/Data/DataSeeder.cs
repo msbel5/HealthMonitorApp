@@ -15,85 +15,18 @@ public class DataSeeder(
 {
     public Task SeedData()
     {
-        if (!context.ServiceStatuses.Any()) SeedOnDeploy();
+        if (!context.ServiceStatuses.Any()) SeedOnDeployForDemo();
         return Task.CompletedTask;
     }
+    
 
-
-    public async Task SeedDataFromRepository(RepositoryAnalysis repositoryAnalysis)
-    {
-        var repositoryData = await repositoryService.GetRepositoryAnalysisByUrlAsync(repositoryAnalysis.Url);
-        if (repositoryData == null)
-        {
-            logger.LogError("Failed to retrieve repository data");
-            return;
-        }
-
-        var apiGroupsJson = await repositoryService.ExtractControllersAndEndpointsAsJsonAsync(repositoryData);
-        var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(apiGroupsJson);
-
-        if (apiGroups == null) return;
-
-        var curlConstructor = new CurlConstructor(repositoryService, context);
-
-        foreach (var apiGroupExt in apiGroups)
-        {
-            var isAuthorized = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
-            var apiGroup = new ApiGroup
-            {
-                Name = apiGroupExt.Name.Replace("Controller", ""),
-                RepositoryAnalysisId = repositoryData.Id,
-                IsAuthorized = isAuthorized,
-                Annotations = apiGroupExt.Annotations
-            };
-            context.ApiGroups.Add(apiGroup);
-            await context.SaveChangesAsync();
-
-            foreach (var apiEndpointExt in apiGroupExt.ApiEndpoints)
-            {
-                var annotationList =
-                    apiEndpointExt.Annotations?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                var httpMethodAnnotation = annotationList.FirstOrDefault(a => a.StartsWith("Http"));
-                var httpMethod = string.Empty;
-                if (httpMethodAnnotation != null)
-                    // Extract just the HTTP method part (e.g., "HttpPost" becomes "POST")
-                    httpMethod = httpMethodAnnotation.Replace("Http", "");
-
-                var serviceStatus = new ServiceStatus { Name = string.Concat(apiEndpointExt.Name, " ", httpMethod) };
-                context.ServiceStatuses.Add(serviceStatus);
-                await context.SaveChangesAsync();
-
-                var isAuthorizedApiEndpoint = apiEndpointExt.IsAuthorized != null && apiEndpointExt.IsAuthorized.Value;
-                var isOpenApiEndpoint = apiEndpointExt.IsOpen != null && apiEndpointExt.IsOpen.Value;
-                var apiEndpoint = new ApiEndpoint
-                {
-                    Name = string.Concat(apiEndpointExt.Name, " ", httpMethod),
-                    cURL = await curlConstructor.ConstructCurlCommand(apiGroupExt, apiEndpointExt, repositoryAnalysis),
-                    ExpectedStatusCode = 200, // As mentioned, it's always 200
-                    ApiGroupId = apiGroup.Id,
-                    ServiceStatusId = serviceStatus.Id,
-                    Annotations = apiEndpointExt.Annotations,
-                    IsAuthorized = isAuthorizedApiEndpoint,
-                    IsOpen = isOpenApiEndpoint,
-                    Parameters = apiEndpointExt.Parameters
-                };
-
-                context.ApiEndpoints.Add(apiEndpoint);
-                await context.SaveChangesAsync();
-
-                await healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
-            }
-        }
-    }
-
-
-    private async void SeedOnDeploy()
+    private async void SeedOnDeployForDemo()
     {
         if (context.ServiceStatuses.Any()) return;
 
         await SeedSettingsOnDeploy();
 
-        await SeedDataFromCurlCommands();
+        await SeedDataFromTxtFileWithCurlInEachLine();
         // 1. Create and add ApiGroups
         var googleGroup = new ApiGroup { Name = "Search Engines" };
         context.ApiGroups.AddRange(googleGroup);
@@ -141,7 +74,7 @@ public class DataSeeder(
         }
     }
 
-    private async Task SeedDataFromCurlCommands()
+    private async Task SeedDataFromTxtFileWithCurlInEachLine()
     {
         var filePath = "Data/1.txt";
 
@@ -258,4 +191,7 @@ public class DataSeeder(
 
         logger.LogInformation("Completed processing all cURL commands");
     }
+    
+
+    
 }

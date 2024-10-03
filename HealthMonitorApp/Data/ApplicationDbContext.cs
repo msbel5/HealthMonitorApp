@@ -3,12 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthMonitorApp.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
-    {
-    }
-
     public DbSet<ApiGroup> ApiGroups { get; set; }
     public DbSet<ApiEndpoint> ApiEndpoints { get; set; }
     public DbSet<ServiceStatus> ServiceStatuses { get; set; }

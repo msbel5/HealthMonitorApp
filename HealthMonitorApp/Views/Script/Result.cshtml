@@ -1,30 +1,34 @@
 @model CurlGenerator.Core.GeneratorResult
 
 @{
-    ViewData["Title"] = "Curl Generation Result";
+ViewData["Title"] = "Curl Generation Result";
 }
 
-<h2>Curl Generation Result</h2>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+<h2 style="text-align: center">Curl Generation Result</h2>
 
 <div class="row">
     <div class="col-md-4">
-        <h3>Files</h3>
+        <h3>Files
+            <button id="saveAllButton" class="btn btn-success btn-sm" style="float: right" onclick="saveAllFiles()">Save All</button>
+        </h3>
         <ul id="fileList" class="list-group">
             @foreach (var file in Model.Files)
             {
-                <li class="list-group-item" onclick="showFileContent('@file.Filename')">
-                    @file.Filename
-                </li>
+            <li class="list-group-item" id="file_@file.Filename" onclick="showFileContent('@file.Filename')">
+                @file.Filename
+            </li>
             }
         </ul>
     </div>
     <div class="col-md-8">
-        <h3>Content</h3>
+        <h3>Content
+            <button id="saveButton" class="btn btn-success btn-sm" style="float: right" onclick="saveContent()">Save</button>
+        </h3>
         <div id="fileContent">
-            <pre id="fileContentText"></pre>
-            <textarea id="fileContentEdit" class="form-control" style="display:none;"></textarea>
-            <button id="editButton" class="btn btn-primary" onclick="toggleEditMode()">Edit</button>
-            <button id="saveButton" class="btn btn-success" style="display:none;" onclick="saveContent()">Save</button>
+            <textarea id="fileContentEdit" class="form-control" style="height:400px;"></textarea>
         </div>
     </div>
 </div>
@@ -32,37 +36,114 @@
 <script>
     let currentFileContent = "";
     let currentFileEndpoint = "";
+    const files = @Html.Raw(Json.Serialize(Model.Files.ToDictionary(f => f.Filename, f => f.Content)));
 
+    // Always show file content in an editable field when a file is clicked
     function showFileContent(endpoint) {
-        const files = @Html.Raw(Json.Serialize(Model.Files.ToDictionary(f => f.Filename, f => f.Content)));
         currentFileContent = files[endpoint];
         currentFileEndpoint = endpoint;
 
-        document.getElementById('fileContentText').innerText = currentFileContent;
         document.getElementById('fileContentEdit').value = currentFileContent;
-        document.getElementById('fileContentText').style.display = 'block';
-        document.getElementById('fileContentEdit').style.display = 'none';
-        document.getElementById('editButton').style.display = 'block';
-        document.getElementById('saveButton').style.display = 'none';
-    }
-
-    function toggleEditMode() {
-        document.getElementById('fileContentText').style.display = 'none';
-        document.getElementById('fileContentEdit').style.display = 'block';
-        document.getElementById('editButton').style.display = 'none';
         document.getElementById('saveButton').style.display = 'block';
     }
 
+    // Save an individual file
     async function saveContent() {
         const editedContent = document.getElementById('fileContentEdit').value;
         currentFileContent = editedContent;
+        const antiForgeryToken = '@Antiforgery.GetTokens(HttpContextAccessor.HttpContext).RequestToken';
 
-        // Add code here to save the updated content to the server if necessary
+        // Show loading indicator
+        showLoadingIndicator();
 
-        document.getElementById('fileContentText').innerText = currentFileContent;
-        document.getElementById('fileContentText').style.display = 'block';
-        document.getElementById('fileContentEdit').style.display = 'none';
-        document.getElementById('editButton').style.display = 'block';
-        document.getElementById('saveButton').style.display = 'none';
+        try {
+            const response = await fetch('/Script/SaveCurlCommand', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiForgeryToken // CSRF token for security
+                },
+                body: JSON.stringify({
+                    filename: currentFileEndpoint,
+                    content: currentFileContent
+                })
+            });
+
+            // Hide loading indicator after save attempt
+            hideLoadingIndicator();
+
+            if (response.ok) {
+                alert('Content saved successfully.');
+                document.getElementById('file_' + currentFileEndpoint).classList.add('list-group-item-success');
+            } else {
+                alert('Failed to save content.');
+            }
+        } catch (error) {
+            console.error('Error saving content:', error);
+            alert('An error occurred while saving content.');
+        }
     }
+
+    // Save All Files at Once
+    async function saveAllFiles() {
+        const antiForgeryToken = '@Antiforgery.GetTokens(HttpContextAccessor.HttpContext).RequestToken';
+        const filesToSave = Object.keys(files).map(filename => ({
+            filename,
+            content: files[filename]
+        }));
+
+        // Show loading indicator
+        showLoadingIndicator();
+
+        try {
+            const response = await fetch('/Script/saveAll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: JSON.stringify({ files: filesToSave })
+            });
+
+            // Hide loading indicator after save attempt
+            hideLoadingIndicator();
+
+            if (response.ok) {
+                alert('All files saved successfully.');
+                // Mark all files as saved
+                Object.keys(files).forEach(filename => {
+                    document.getElementById('file_' + filename).classList.add('list-group-item-success');
+                });
+            } else {
+                alert('Failed to save all files.');
+            }
+        } catch (error) {
+            console.error('Error saving all files:', error);
+            alert('An error occurred while saving all files.');
+        }
+    }
+
+    // Show and hide loading indicator
+    function showLoadingIndicator() {
+        document.getElementById("loadingIndicator").style.display = "flex";
+    }
+
+    function hideLoadingIndicator() {
+        document.getElementById("loadingIndicator").style.display = "none";
+    }
+
+    // Adjust the height of the textarea dynamically to fit the content list
+    function adjustTextareaHeight() {
+        const fileList = document.getElementById('fileList');
+        const fileContentEdit = document.getElementById('fileContentEdit');
+        if (fileList && fileContentEdit) {
+            const newHeight = fileList.clientHeight;
+            fileContentEdit.style.height = `${newHeight}px`;
+        }
+    }
+
+    // Ensure the textarea adjusts its height dynamically
+    window.addEventListener('resize', adjustTextareaHeight);
+    window.addEventListener('load', adjustTextareaHeight);
+
 </script>

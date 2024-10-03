@@ -24,12 +24,16 @@ builder.Services.AddScoped<WarningService>();
 builtLog += "ServiceType: WarningService, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddTransient<RepositoryService>();
 builtLog += "ServiceType: RepositoryService, Lifetime: Transient, ImplementationType: None\n";
+builder.Services.AddScoped<CurlCommandService>();
+builtLog += "ServiceType: CurlCommandService, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddScoped<ReportHandler>();
 builtLog += "ServiceType: ReportHandler, Lifetime: Scoped, ImplementationType: None\n";
 builder.Services.AddHostedService<HealthCheckHostedService>();
 builtLog += "ServiceType: HealthCheckHostedService, Lifetime: Singleton, ImplementationType: None\n";
 builder.Services.AddSignalR();
 builtLog += "ServiceType: SignalR, Lifetime: Singleton, ImplementationType: None\n";
+builder.Services.AddHttpContextAccessor();
+builtLog += "ServiceType: IHttpContextAccessor, Lifetime: Singleton, ImplementationType: None\n";
 
 // Register the VCS and CodeCheck services
 builder.Services.AddTransient<GitVcsProvider>(); // Assuming GitVcsProvider doesn't require interfaces to be registered

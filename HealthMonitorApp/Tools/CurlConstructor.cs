@@ -78,6 +78,8 @@ public class CurlConstructor(RepositoryService repositoryService, ApplicationDbC
 
         return commandBuilder.ToString();
     }
+    
+    
 
     private void FlattenComplexType(string parentName, JArray properties, List<string> formData)
     {

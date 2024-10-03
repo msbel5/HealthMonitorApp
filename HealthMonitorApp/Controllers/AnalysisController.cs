@@ -157,7 +157,7 @@ public class AnalysisController : Controller
                     await _dbContext.SaveChangesAsync();
                 }
 
-            if (model.IntegrateEndpoints) await _dataSeeder.SeedDataFromRepository(newRepositoryAnalysis);
+            if (model.IntegrateEndpoints) await _repositoryService.SeedDataFromRepositoryAnalysis(newRepositoryAnalysis);
             return RedirectToAction("Index");
         }
 

@@ -1,6 +1,7 @@
 using System.Drawing;
 using HealthMonitorApp.Data;
 using HealthMonitorApp.Models;
+using HealthMonitorApp.Tools;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,11 +19,13 @@ public class RepositoryService
     private readonly ApplicationDbContext _dbContext;
     private readonly IWebHostEnvironment _env;
     private readonly Logger<RepositoryService> _logger;
+    private readonly HealthCheckService _healthCheckService;
 
 
-    public RepositoryService(ApplicationDbContext dbContext, IWebHostEnvironment env)
+    public RepositoryService(ApplicationDbContext dbContext, HealthCheckService healthCheckService, IWebHostEnvironment env)
     {
         _dbContext = dbContext;
+        _healthCheckService = healthCheckService;
         _env = env;
         _logger = new Logger<RepositoryService>(new LoggerFactory());
     }
@@ -564,6 +567,73 @@ public class RepositoryService
         _logger.LogInformation("Using repository download path: {RepositoryDownloadPath}", repositoryDownloadPath);
         return repositoryDownloadPath;
     }
+    
+    public async Task SeedDataFromRepositoryAnalysis(RepositoryAnalysis repositoryAnalysis)
+    {
+        var repositoryData = await GetRepositoryAnalysisByUrlAsync(repositoryAnalysis.Url);
+        if (repositoryData == null)
+        {
+            _logger.LogError("Failed to retrieve repository data");
+            return;
+        }
+
+        var apiGroupsJson = await ExtractControllersAndEndpointsAsJsonAsync(repositoryData);
+        var apiGroups = JsonConvert.DeserializeObject<List<ApiGroup>>(apiGroupsJson);
+
+        if (apiGroups == null) return;
+
+        var curlConstructor = new CurlConstructor(this, _dbContext);
+
+        foreach (var apiGroupExt in apiGroups)
+        {
+            var isAuthorized = apiGroupExt.IsAuthorized != null && apiGroupExt.IsAuthorized.Value;
+            var apiGroup = new ApiGroup
+            {
+                Name = apiGroupExt.Name.Replace("Controller", ""),
+                RepositoryAnalysisId = repositoryData.Id,
+                IsAuthorized = isAuthorized,
+                Annotations = apiGroupExt.Annotations
+            };
+            _dbContext.ApiGroups.Add(apiGroup);
+            await _dbContext.SaveChangesAsync();
+
+            foreach (var apiEndpointExt in apiGroupExt.ApiEndpoints)
+            {
+                var annotationList =
+                    apiEndpointExt.Annotations?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                var httpMethodAnnotation = annotationList.FirstOrDefault(a => a.StartsWith("Http"));
+                var httpMethod = string.Empty;
+                if (httpMethodAnnotation != null)
+                    // Extract just the HTTP method part (e.g., "HttpPost" becomes "POST")
+                    httpMethod = httpMethodAnnotation.Replace("Http", "");
+
+                var serviceStatus = new ServiceStatus { Name = string.Concat(apiEndpointExt.Name, " ", httpMethod) };
+                _dbContext.ServiceStatuses.Add(serviceStatus);
+                await _dbContext.SaveChangesAsync();
+
+                var isAuthorizedApiEndpoint = apiEndpointExt.IsAuthorized != null && apiEndpointExt.IsAuthorized.Value;
+                var isOpenApiEndpoint = apiEndpointExt.IsOpen != null && apiEndpointExt.IsOpen.Value;
+                var apiEndpoint = new ApiEndpoint
+                {
+                    Name = string.Concat(apiEndpointExt.Name, " ", httpMethod),
+                    cURL = await curlConstructor.ConstructCurlCommand(apiGroupExt, apiEndpointExt, repositoryAnalysis),
+                    ExpectedStatusCode = 200, // As mentioned, it's always 200
+                    ApiGroupId = apiGroup.Id,
+                    ServiceStatusId = serviceStatus.Id,
+                    Annotations = apiEndpointExt.Annotations,
+                    IsAuthorized = isAuthorizedApiEndpoint,
+                    IsOpen = isOpenApiEndpoint,
+                    Parameters = apiEndpointExt.Parameters
+                };
+
+                _dbContext.ApiEndpoints.Add(apiEndpoint);
+                await _dbContext.SaveChangesAsync();
+
+                await _healthCheckService.CheckServiceStatusHealthAsync(serviceStatus);
+            }
+        }
+    }
+
 
     private bool IsRunningInContainer()
     {
